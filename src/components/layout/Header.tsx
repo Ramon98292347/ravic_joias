@@ -6,6 +6,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 const Header = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const navLinks = [
     { name: "Joias", href: "/categoria/joias" },
@@ -137,15 +138,25 @@ const Header = () => {
         {/* Search Bar */}
         {isSearchOpen && (
           <div className="py-4 border-t border-border/50 animate-fade-in">
-            <div className="relative max-w-xl mx-auto">
+            <form 
+              className="relative max-w-xl mx-auto"
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (searchQuery.trim()) {
+                  window.location.href = `/buscar?q=${encodeURIComponent(searchQuery)}`;
+                }
+              }}
+            >
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted" />
               <input
                 type="text"
                 placeholder="Buscar joias, relógios, canetas..."
                 className="w-full pl-12 pr-4 py-3 bg-secondary/50 border border-border rounded-sm text-foreground placeholder:text-muted focus:outline-none focus:border-primary transition-colors"
                 autoFocus
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
               />
-            </div>
+            </form>
           </div>
         )}
       </div>

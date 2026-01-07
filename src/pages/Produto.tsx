@@ -6,6 +6,7 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import MobileBar from "@/components/layout/MobileBar";
 import WhatsAppButton from "@/components/layout/WhatsAppButton";
+import OptimizedImage from "@/components/OptimizedImage";
 
 interface Product {
   id: string;
@@ -201,7 +202,7 @@ const Produto = () => {
             <div className="relative aspect-square bg-secondary/30 rounded-lg overflow-hidden">
               {images.length > 0 ? (
                 <>
-                  <img
+                  <OptimizedImage
                     src={images[selectedImage]?.url}
                     alt={images[selectedImage]?.alt_text || product.name}
                     className="w-full h-full object-cover"
@@ -243,7 +244,7 @@ const Produto = () => {
                       selectedImage === index ? 'border-primary' : 'border-transparent hover:border-primary/50'
                     }`}
                   >
-                    <img
+                    <OptimizedImage
                       src={image.url}
                       alt={image.alt_text || product.name}
                       className="w-full h-full object-cover"

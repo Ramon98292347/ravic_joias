@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { Heart, ShoppingBag } from "lucide-react";
+import OptimizedImage from "@/components/OptimizedImage";
 
 interface ProductCardProps {
   id: string;
@@ -35,7 +36,7 @@ const ProductCard = ({
     <Link to={`/produto/${id}`} className="product-card group block">
       {/* Image Container */}
       <div className="relative aspect-[3/4] overflow-hidden bg-secondary/30">
-        <img
+        <OptimizedImage
           src={image}
           alt={name}
           className="w-full h-full object-cover img-zoom"

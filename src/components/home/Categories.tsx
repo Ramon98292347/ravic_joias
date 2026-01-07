@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import OptimizedImage from "@/components/OptimizedImage";
 
 interface Collection {
   id: string;
@@ -56,7 +57,7 @@ const Categories = () => {
                 to={`/categoria/${collection.slug}`}
                 className="category-card group aspect-[3/4]"
               >
-                <img
+                <OptimizedImage
                   src={collection.image_url || collection.banner_url || "/placeholder.svg"}
                   alt={collection.name}
                   className="w-full h-full object-cover img-zoom"
