@@ -48,6 +48,7 @@ const AdminProductForm: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const [tagInput, setTagInput] = useState('');
   const [existingImages, setExistingImages] = useState<any[]>([]);
+  const collectionSlug = collections.find((c) => c.id === formData.collection_id)?.slug || '';
 
   useEffect(() => {
     loadCategories();
@@ -168,11 +169,12 @@ const AdminProductForm: React.FC = () => {
 
       // Upload images if any
       if (!isEditing && formData.images.length > 0) {
-        const bucket = import.meta.env.VITE_STORAGE_BUCKET || 'public-assets';
+        const bucket = import.meta.env.VITE_STORAGE_BUCKET || 'product-images';
         const productId = newId as string;
         for (let i = 0; i < formData.images.length; i++) {
           const file = formData.images[i];
-          const path = `products/${productId}/${Date.now()}-${file.name}`;
+          const folder = (collections.find((c) => c.id === formData.collection_id)?.slug) || `products/${productId}`;
+          const path = `${folder}/${Date.now()}-${file.name}`;
           const { publicUrl, storagePath } = await adminData.uploadToStorage(bucket, path, file);
           await adminData.addProductImage(productId, {
             url: publicUrl,
@@ -413,12 +415,13 @@ const AdminProductForm: React.FC = () => {
           <div className="bg-slate-800 rounded-lg p-6 border border-slate-700">
             <h3 className="text-lg font-semibold text-white mb-4">Imagens do Produto</h3>
             {isEditing ? (
-              <ImageUpload
-                productId={id!}
-                existingImages={existingImages}
-                onUploadComplete={() => loadProduct()}
-                onImageRemove={() => loadProduct()}
-              />
+            <ImageUpload
+              productId={id!}
+              existingImages={existingImages}
+              onUploadComplete={() => loadProduct()}
+              onImageRemove={() => loadProduct()}
+              folderPrefix={collectionSlug}
+            />
             ) : (
               <div className="text-slate-300 text-sm">As imagens serão enviadas após criar o produto.</div>
             )}

@@ -13,13 +13,15 @@ interface ImageUploadProps {
     alt_text?: string;
     is_primary?: boolean;
   }>;
+  folderPrefix?: string;
 }
 
 const ImageUpload: React.FC<ImageUploadProps> = ({
   productId,
   onUploadComplete,
   onImageRemove,
-  existingImages = []
+  existingImages = [],
+  folderPrefix,
 }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
@@ -52,8 +54,9 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
     setIsUploading(true);
 
     try {
-      const bucket = import.meta.env.VITE_STORAGE_BUCKET || 'public-assets';
-      const path = `products/${productId}/${Date.now()}-${file.name}`;
+      const bucket = import.meta.env.VITE_STORAGE_BUCKET || 'product-images';
+      const baseFolder = folderPrefix && folderPrefix.trim().length > 0 ? folderPrefix : `products/${productId}`;
+      const path = `${baseFolder}/${Date.now()}-${file.name}`;
       const { publicUrl, storagePath } = await adminData.uploadToStorage(bucket, path, file);
       await adminData.addProductImage(productId, {
         url: publicUrl,
