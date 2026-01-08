@@ -124,7 +124,8 @@ const AdminLogin: React.FC = () => {
                   value={masterPassword}
                   onChange={(e) => setMasterPassword(e.target.value)}
                   className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition-all"
-                  placeholder="admin123"
+                  placeholder="••••••••"
+                  autoComplete="off"
                   required
                   disabled={loading}
                 />
