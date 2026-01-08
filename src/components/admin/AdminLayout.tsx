@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import adminService from '../../services/adminService';
+import { adminAuth } from '@/services/adminAuth';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -20,10 +20,10 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
 
   const loadUserData = async () => {
     try {
-      const userData = await adminService.getCurrentUser();
-      setUser(userData.user);
+      const userData = await adminAuth.getCurrentUser();
+      setUser(userData);
+      if (!userData) navigate('/admin/login');
     } catch (error) {
-      console.error('Error loading user:', error);
       navigate('/admin/login');
     } finally {
       setLoading(false);
@@ -32,11 +32,9 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
 
   const handleLogout = async () => {
     try {
-      await adminService.logout();
+      await adminAuth.signOut();
       navigate('/admin/login');
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
+    } catch {}
   };
 
   const menuItems = [
@@ -133,12 +131,12 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
             {/* User Info */}
             <div className="flex items-center space-x-2 sm:space-x-4">
               <div className="hidden sm:block text-right">
-                <p className="text-sm font-medium text-white">{user?.name}</p>
-                <p className="text-xs text-slate-400">{user?.role}</p>
+                <p className="text-sm font-medium text-white">{user?.user_metadata?.name || user?.email}</p>
+                <p className="text-xs text-slate-400">{user?.user_metadata?.role || 'admin'}</p>
               </div>
               <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-amber-400 to-amber-600 rounded-full flex items-center justify-center">
                 <span className="text-sm font-bold text-slate-900">
-                  {user?.name?.charAt(0)?.toUpperCase() || 'A'}
+                  {(user?.user_metadata?.name?.charAt(0) || user?.email?.charAt(0) || 'A').toUpperCase()}
                 </span>
               </div>
             </div>
