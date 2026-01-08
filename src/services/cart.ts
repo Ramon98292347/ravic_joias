@@ -54,6 +54,9 @@ export const cartService = {
       total_price: total,
       customization: customization ?? null,
     });
+    try {
+      window.dispatchEvent(new CustomEvent("cart:updated"));
+    } catch {}
   },
 
   async updateQuantity(itemId: string, quantity: number): Promise<void> {
@@ -68,15 +71,23 @@ export const cartService = {
       .from("shopping_cart_items")
       .update({ quantity, total_price: unit * quantity })
       .eq("id", itemId);
+    try {
+      window.dispatchEvent(new CustomEvent("cart:updated"));
+    } catch {}
   },
 
   async removeItem(itemId: string): Promise<void> {
     await supabase.from("shopping_cart_items").delete().eq("id", itemId);
+    try {
+      window.dispatchEvent(new CustomEvent("cart:updated"));
+    } catch {}
   },
 
   async clearCart(): Promise<void> {
     const cid = this.getCartId();
     await supabase.from("shopping_cart_items").delete().eq("cart_id", cid);
+    try {
+      window.dispatchEvent(new CustomEvent("cart:updated"));
+    } catch {}
   },
 };
-

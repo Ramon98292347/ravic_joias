@@ -1,4 +1,4 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { useState, useEffect, useMemo } from "react";
 import { Helmet } from "react-helmet-async";
 import { ShoppingCart, Heart, Share2, ChevronLeft, ChevronRight, Star, Truck, Shield, Package } from "lucide-react";
@@ -14,6 +14,7 @@ type Product = PublicProduct & { is_bestseller?: boolean };
 
 const Produto = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState(0);
@@ -65,7 +66,7 @@ const Produto = () => {
     const customization = selectedSize ? { size: selectedSize } : null;
     try {
       await cartService.addItem(product.id, quantity, unit, customization || undefined);
-      alert('Produto adicionado ao carrinho!');
+      navigate("/carrinho");
     } catch (e) {
       alert('Erro ao adicionar ao carrinho');
     }

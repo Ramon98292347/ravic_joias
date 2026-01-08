@@ -98,9 +98,11 @@ const Carrinho = () => {
               <Link to="/">
                 <Button variant="outline" className="flex-1">Continuar Comprando</Button>
               </Link>
-              <Button className="flex-1" disabled>
-                Finalizar (em breve)
-              </Button>
+              <Link to="/finalizar" className="flex-1">
+                <Button className="w-full">
+                  Finalizar
+                </Button>
+              </Link>
             </div>
           </div>
         )}

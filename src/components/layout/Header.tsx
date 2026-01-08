@@ -1,14 +1,34 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Menu, Search, User, ShoppingBag, X, Heart, Home, Grid3X3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { cartService } from "@/services/cart";
 
 const Header = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [cartCount, setCartCount] = useState(0);
 
   const navLinks: Array<{ name: string; href: string }> = [];
+
+  useEffect(() => {
+    const refresh = async () => {
+      const items = await cartService.listItems();
+      const count = items.reduce((sum, it) => sum + (it.quantity || 0), 0);
+      setCartCount(count);
+    };
+    refresh();
+    const onUpdated = () => refresh();
+    window.addEventListener("cart:updated", onUpdated);
+    window.addEventListener("focus", onUpdated);
+    document.addEventListener("visibilitychange", onUpdated);
+    return () => {
+      window.removeEventListener("cart:updated", onUpdated);
+      window.removeEventListener("focus", onUpdated);
+      document.removeEventListener("visibilitychange", onUpdated);
+    };
+  }, []);
 
   return (
     <header className="sticky top-0 z-50 glass border-b border-border/50">
@@ -74,9 +94,11 @@ const Header = () => {
             >
               <ShoppingBag className="h-5 w-5" />
               <span className="text-xs font-medium">Carrinho</span>
-              <span className="absolute -top-0.5 -right-0.5 h-3 w-3 rounded-full bg-primary text-[8px] font-medium flex items-center justify-center text-primary-foreground">
-                0
-              </span>
+              {cartCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 h-3 w-3 rounded-full bg-primary text-[8px] font-medium flex items-center justify-center text-primary-foreground">
+                  {cartCount}
+                </span>
+              )}
             </Link>
           </nav>
 
@@ -92,20 +114,21 @@ const Header = () => {
             >
               {isSearchOpen ? <X className="h-5 w-5" /> : <Search className="h-5 w-5" />}
             </Button>
-            <Button variant="ghost" size="icon" className="hidden md:flex text-foreground hover:text-primary">
-              <Heart className="h-5 w-5" />
-            </Button>
             <Link to="/admin/login">
               <Button variant="ghost" size="icon" className="text-foreground hover:text-primary">
                 <User className="h-5 w-5" />
               </Button>
             </Link>
-            <Button variant="ghost" size="icon" className="relative text-foreground hover:text-primary">
-              <ShoppingBag className="h-5 w-5" />
-              <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-[10px] font-medium flex items-center justify-center text-primary-foreground">
-                0
-              </span>
-            </Button>
+            <Link to="/carrinho">
+              <Button variant="ghost" size="icon" className="relative text-foreground hover:text-primary">
+                <ShoppingBag className="h-5 w-5" />
+                {cartCount > 0 && (
+                  <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-[10px] font-medium flex items-center justify-center text-primary-foreground">
+                    {cartCount}
+                  </span>
+                )}
+              </Button>
+            </Link>
           </div>
         </div>
 

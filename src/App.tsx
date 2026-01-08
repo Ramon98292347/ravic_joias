@@ -25,6 +25,7 @@ import AdminCollections from "./components/admin/AdminCollections";
 import AdminOrders from "./components/admin/AdminOrders";
 import AdminCoupons from "./components/admin/AdminCoupons";
 import Colecoes from "./pages/Colecoes";
+import Finalizar from "./pages/Finalizar";
 
 const queryClient = new QueryClient();
 
@@ -43,6 +44,7 @@ const App = () => (
             <Route path="/produto/:id" element={<Produto />} />
             <Route path="/buscar" element={<Buscar />} />
             <Route path="/carrinho" element={<Carrinho />} />
+            <Route path="/finalizar" element={<Finalizar />} />
             <Route path="/sobre" element={<Sobre />} />
             <Route path="/contato" element={<Contato />} />
             {/* Admin Routes */}
