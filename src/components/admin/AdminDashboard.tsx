@@ -26,12 +26,12 @@ const AdminDashboard: React.FC = () => {
       setLoading(true);
       const { count: totalProducts } = await supabase
         .from('products')
-        .select('id', { count: 'exact', head: true })
+        .select('id', { count: 'exact' })
         .eq('is_active', true);
 
       const { count: lowStockProducts } = await supabase
         .from('products')
-        .select('id', { count: 'exact', head: true })
+        .select('id', { count: 'exact' })
         .lte('stock', 0)
         .eq('is_active', true);
 

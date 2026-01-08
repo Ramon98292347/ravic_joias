@@ -349,47 +349,12 @@ const AdminCarousel: React.FC = () => {
           )}
         </div>
 
-        {/* Preview */}
-        <div className="bg-slate-800 rounded-lg p-4 sm:p-6 border border-slate-700">
-          <h3 className="text-base sm:text-lg font-semibold text-white mb-3 sm:mb-4">Prévia do Carrossel</h3>
-          
-          <div className="bg-slate-900 rounded-lg p-3 sm:p-4">
-            <CarouselPreview items={carouselItems} autoPlay={autoPlay} transition={transitionTime} />
-          </div>
-        </div>
+        {/* Prévia removida conforme solicitação */}
       </div>
     </AdminLayout>
   );
 };
 
-const CarouselPreview = ({ items, autoPlay, transition }: { items: any[]; autoPlay: boolean; transition: number }) => {
-  const [index, setIndex] = React.useState(0);
-  React.useEffect(() => {
-    if (!autoPlay || items.length === 0) return;
-    const id = setInterval(() => setIndex((i) => (i + 1) % items.length), transition * 1000);
-    return () => clearInterval(id);
-  }, [autoPlay, transition, items.length]);
-
-  if (items.length === 0) {
-    return <div className="text-center text-slate-400 py-10">Nenhum item para prévia</div>;
-  }
-
-  const current = items[index];
-  return (
-    <div className="relative overflow-hidden rounded-lg">
-      <img src={current.image_url} alt={current.title} className="w-full h-48 sm:h-64 object-cover" />
-      <div className="absolute inset-0 bg-black/20" />
-      <div className="absolute inset-0 p-4 sm:p-6 flex flex-col justify-end">
-        <h4 className="text-white text-lg sm:text-xl font-semibold">{current.title}</h4>
-        {current.subtitle && <p className="text-slate-200 text-sm">{current.subtitle}</p>}
-      </div>
-      <div className="absolute inset-x-0 bottom-2 flex justify-center gap-2">
-        {items.map((_, i) => (
-          <button key={i} onClick={() => setIndex(i)} className={`h-2 w-2 rounded-full ${i === index ? 'bg-amber-400' : 'bg-slate-500'}`} />
-        ))}
-      </div>
-    </div>
-  );
-};
+// Preview removida
 
 export default AdminCarousel;
