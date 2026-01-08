@@ -62,6 +62,12 @@ const Produto = () => {
 
   const handleAddToCart = async () => {
     if (!product) return;
+    const hasSizes =
+      (product as any).sizes && Array.isArray((product as any).sizes) && (product as any).sizes.length > 0;
+    if (hasSizes && !selectedSize) {
+      alert("Selecione um tamanho antes de adicionar ao carrinho.");
+      return;
+    }
     const unit = product.price;
     const customization = selectedSize ? { size: selectedSize } : null;
     try {
@@ -299,7 +305,7 @@ const Produto = () => {
 
             {/* Size Selection */}
             <div className="space-y-3">
-              <label className="text-sm font-medium text-foreground">Tamanho</label>
+              <label className="text-sm font-medium text-foreground">Tamanho (obrigatório)</label>
               <div className="flex flex-wrap gap-2">
                 {(() => {
                   const sizes = (product as any).sizes && Array.isArray((product as any).sizes)
@@ -320,6 +326,9 @@ const Produto = () => {
                   ));
                 })()}
               </div>
+              {!selectedSize && (
+                <p className="text-xs text-destructive">Selecione um tamanho para continuar.</p>
+              )}
             </div>
 
             {/* Quantity */}
@@ -348,7 +357,11 @@ const Produto = () => {
             <div className="space-y-3">
               <button
                 onClick={handleAddToCart}
-                disabled={product.stock === 0}
+                disabled={
+                  product.stock === 0 ||
+                  (((product as any).sizes && Array.isArray((product as any).sizes) && (product as any).sizes.length > 0) &&
+                    !selectedSize)
+                }
                 className="w-full py-4 bg-primary text-primary-foreground font-medium uppercase tracking-wider hover:bg-primary/90 transition-colors disabled:bg-muted disabled:cursor-not-allowed flex items-center justify-center gap-3"
               >
                 <ShoppingCart className="h-5 w-5" />

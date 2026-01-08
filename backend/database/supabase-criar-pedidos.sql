@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS public.itens_do_pedido (
   product_name VARCHAR(255) NOT NULL,
   product_price NUMERIC(10,2) NOT NULL,
   quantity INTEGER NOT NULL,
+  size INTEGER NULL,
   subtotal NUMERIC(10,2) NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );

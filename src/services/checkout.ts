@@ -62,6 +62,7 @@ export const checkoutService = {
       product_name: it.product?.name || "Produto",
       product_price: it.unit_price,
       quantity: it.quantity,
+      size: it.customization?.size ?? null,
       subtotal: it.total_price,
     }));
 
@@ -86,6 +87,7 @@ export const checkoutService = {
         quantity: it.quantity,
         unit_price: it.unit_price,
         total_price: it.total_price,
+        size: it.customization?.size ?? null,
         image_url:
           it.product?.images?.find((img) => img?.is_primary)?.url ||
           it.product?.images?.[0]?.url ||
