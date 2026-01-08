@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import AdminLayout from './AdminLayout';
-import adminService from '../../services/adminService';
+import { fetchProducts, fetchCategories } from '@/services/publicData';
 
 interface Product {
   id: string;
@@ -32,14 +32,14 @@ const AdminProducts: React.FC = () => {
   const loadProducts = async () => {
     try {
       setLoading(true);
-      const params: any = {};
-      
-      if (searchTerm) params.search = searchTerm;
-      if (categoryFilter !== 'all') params.category = categoryFilter;
-      if (statusFilter !== 'all') params.status = statusFilter;
-
-      const response = await adminService.getProducts(params);
-      setProducts(response.products || []);
+      const params: any = {
+        search: searchTerm || undefined,
+        category: categoryFilter !== 'all' ? categoryFilter : undefined,
+        featured: statusFilter === 'featured' ? true : undefined,
+        isNew: statusFilter === 'new' ? true : undefined,
+      };
+      const { products } = await fetchProducts({ page: 1, limit: 200, ...params });
+      setProducts(products || []);
     } catch (error) {
       console.error('Error loading products:', error);
     } finally {
@@ -49,22 +49,15 @@ const AdminProducts: React.FC = () => {
 
   const loadCategories = async () => {
     try {
-      const response = await adminService.getCategories();
-      setCategories(response.categories || []);
+      const response = await fetchCategories();
+      setCategories(response || []);
     } catch (error) {
       console.error('Error loading categories:', error);
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (window.confirm('Tem certeza que deseja excluir este produto?')) {
-      try {
-        await adminService.deleteProduct(id);
-        loadProducts();
-      } catch (error) {
-        console.error('Error deleting product:', error);
-      }
-    }
+  const handleDelete = async (_id: string) => {
+    alert('Exclusão ainda não habilitada nesta versão (migrando para Supabase).');
   };
 
   const formatCurrency = (value: number) => {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Image, AlertCircle } from 'lucide-react';
 import AdminLayout from './AdminLayout';
-import adminService from '../../services/adminService';
+import { fetchCollections } from '@/services/publicData';
 
 interface Collection {
   id: string;
@@ -37,8 +37,8 @@ const AdminCollections: React.FC = () => {
   const loadCollections = async () => {
     try {
       setLoading(true);
-      const response = await adminService.getCollections();
-      setCollections(response.collections || []);
+      const response = await fetchCollections();
+      setCollections(response || []);
     } catch (error) {
       console.error('Erro ao carregar coleções:', error);
     } finally {
@@ -77,24 +77,7 @@ const AdminCollections: React.FC = () => {
       return;
     }
 
-    try {
-      if (editingCollection) {
-        await adminService.updateCollection(editingCollection.id, formData);
-      } else {
-        await adminService.createCollection(formData);
-      }
-
-      setShowModal(false);
-      setEditingCollection(null);
-      resetForm();
-      loadCollections();
-    } catch (error: any) {
-      if (error.message?.includes('Slug já existe')) {
-        setErrors({ slug: 'Slug já está em uso' });
-      } else {
-        setErrors({ general: 'Erro ao salvar coleção' });
-      }
-    }
+    alert('CRUD ainda não migrado para Supabase. Nesta versão, listagem está funcional; criação/edição/exclusão serão habilitadas na próxima etapa.');
   };
 
   const handleEdit = (collection: Collection) => {
@@ -110,16 +93,8 @@ const AdminCollections: React.FC = () => {
     setShowModal(true);
   };
 
-  const handleDelete = async (collectionId: string) => {
-    if (window.confirm('Tem certeza que deseja excluir esta coleção?')) {
-      try {
-        await adminService.deleteCollection(collectionId);
-        loadCollections();
-      } catch (error) {
-        console.error('Erro ao excluir coleção:', error);
-        alert('Erro ao excluir coleção');
-      }
-    }
+  const handleDelete = async (_collectionId: string) => {
+    alert('Exclusão ainda não habilitada nesta versão.');
   };
 
   const resetForm = () => {
@@ -140,16 +115,8 @@ const AdminCollections: React.FC = () => {
     resetForm();
   };
 
-  const toggleStatus = async (collection: Collection) => {
-    try {
-      await adminService.updateCollection(collection.id, {
-        ...collection,
-        is_active: !collection.is_active
-      });
-      loadCollections();
-    } catch (error) {
-      console.error('Erro ao alterar status:', error);
-    }
+  const toggleStatus = async (_collection: Collection) => {
+    alert('Alterar status ainda não habilitado nesta versão.');
   };
 
   if (loading) {

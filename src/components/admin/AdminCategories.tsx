@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import AdminLayout from './AdminLayout';
-import adminService from '../../services/adminService';
+import { fetchCategories } from '@/services/publicData';
 
 interface Category {
   id: string;
@@ -34,8 +34,8 @@ const AdminCategories: React.FC = () => {
 
   const loadCategories = async () => {
     try {
-      const response = await adminService.getCategories();
-      setCategories(response.categories || []);
+      const response = await fetchCategories();
+      setCategories(response || []);
     } catch (error) {
       console.error('Error loading categories:', error);
     } finally {
@@ -45,29 +45,7 @@ const AdminCategories: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    try {
-      if (editingCategory) {
-        await adminService.updateCategory(editingCategory.id, formData);
-      } else {
-        await adminService.createCategory(formData);
-      }
-      
-      setShowModal(false);
-      setEditingCategory(null);
-      setFormData({
-        name: '',
-        slug: '',
-        description: '',
-        image_url: '',
-        is_active: true,
-        sort_order: 0,
-      });
-      loadCategories();
-    } catch (error) {
-      console.error('Error saving category:', error);
-      alert('Erro ao salvar categoria');
-    }
+    alert('CRUD ainda não migrado para Supabase. Nesta versão, listagem está funcional; criação/edição/exclusão serão habilitadas na próxima etapa.');
   };
 
   const handleEdit = (category: Category) => {
@@ -83,25 +61,12 @@ const AdminCategories: React.FC = () => {
     setShowModal(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (window.confirm('Tem certeza que deseja excluir esta categoria?')) {
-      try {
-        await adminService.deleteCategory(id);
-        loadCategories();
-      } catch (error) {
-        console.error('Error deleting category:', error);
-        alert('Erro ao excluir categoria');
-      }
-    }
+  const handleDelete = async (_id: string) => {
+    alert('Exclusão ainda não habilitada nesta versão.');
   };
 
-  const handleToggleActive = async (category: Category) => {
-    try {
-      await adminService.updateCategory(category.id, { ...category, is_active: !category.is_active });
-      loadCategories();
-    } catch (error) {
-      console.error('Error toggling category status:', error);
-    }
+  const handleToggleActive = async (_category: Category) => {
+    alert('Alterar status ainda não habilitado nesta versão.');
   };
 
   const generateSlug = (name: string) => {
