@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import AdminLayout from './AdminLayout';
-import adminService from '../../services/adminService';
+import { fetchCategories, fetchCollections } from '@/services/publicData';
+import { adminData } from '@/services/adminData';
 
 interface ProductForm {
   name: string;
@@ -56,8 +57,8 @@ const AdminProductForm: React.FC = () => {
 
   const loadCategories = async () => {
     try {
-      const response = await adminService.getCategories();
-      setCategories(response.categories || []);
+      const response = await fetchCategories();
+      setCategories(response || []);
     } catch (error) {
       console.error('Error loading categories:', error);
     }
@@ -65,8 +66,8 @@ const AdminProductForm: React.FC = () => {
 
   const loadCollections = async () => {
     try {
-      const response = await adminService.getCollections();
-      setCollections(response.collections || []);
+      const response = await fetchCollections();
+      setCollections(response || []);
     } catch (error) {
       console.error('Error loading collections:', error);
     }
@@ -75,8 +76,7 @@ const AdminProductForm: React.FC = () => {
   const loadProduct = async () => {
     try {
       setLoading(true);
-      const response = await adminService.getProduct(id!);
-      const product = response.product;
+      const product = await adminData.getProduct(id!);
       
       setFormData({
         name: product.name,
@@ -157,18 +157,10 @@ const AdminProductForm: React.FC = () => {
         stock: parseInt(formData.stock),
       };
 
-      if (isEditing) {
-        await adminService.updateProduct(id!, productData);
-      } else {
-        await adminService.createProduct(productData);
-      }
+      await adminData.upsertProduct(isEditing ? id! : null, productData);
 
       // Upload images if any
-      if (formData.images.length > 0) {
-        for (const image of formData.images) {
-          await adminService.uploadProductImage(isEditing ? id! : 'temp', image);
-        }
-      }
+      // Upload de imagens via Supabase Storage poderá ser habilitado na próxima etapa
 
       navigate('/admin/products');
     } catch (error) {

@@ -77,7 +77,16 @@ const AdminCollections: React.FC = () => {
       return;
     }
 
-    alert('CRUD ainda não migrado para Supabase. Nesta versão, listagem está funcional; criação/edição/exclusão serão habilitadas na próxima etapa.');
+    try {
+      const id = editingCollection ? editingCollection.id : null;
+      await adminData.upsertCollection(id, formData);
+      setShowModal(false);
+      setEditingCollection(null);
+      resetForm();
+      loadCollections();
+    } catch (error: any) {
+      setErrors({ general: error.message || 'Erro ao salvar coleção' });
+    }
   };
 
   const handleEdit = (collection: Collection) => {
@@ -93,8 +102,14 @@ const AdminCollections: React.FC = () => {
     setShowModal(true);
   };
 
-  const handleDelete = async (_collectionId: string) => {
-    alert('Exclusão ainda não habilitada nesta versão.');
+  const handleDelete = async (collectionId: string) => {
+    if (!window.confirm('Tem certeza que deseja excluir esta coleção?')) return;
+    try {
+      await adminData.deleteCollection(collectionId);
+      loadCollections();
+    } catch {
+      alert('Erro ao excluir coleção');
+    }
   };
 
   const resetForm = () => {
@@ -115,8 +130,11 @@ const AdminCollections: React.FC = () => {
     resetForm();
   };
 
-  const toggleStatus = async (_collection: Collection) => {
-    alert('Alterar status ainda não habilitado nesta versão.');
+  const toggleStatus = async (collection: Collection) => {
+    try {
+      await adminData.upsertCollection(collection.id, { is_active: !collection.is_active });
+      loadCollections();
+    } catch {}
   };
 
   if (loading) {

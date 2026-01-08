@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import AdminLayout from './AdminLayout';
 import { fetchProducts, fetchCategories } from '@/services/publicData';
+import { adminData } from '@/services/adminData';
 import OptimizedImage from '@/components/OptimizedImage';
 
 interface Product {
@@ -57,8 +58,14 @@ const AdminProducts: React.FC = () => {
     }
   };
 
-  const handleDelete = async (_id: string) => {
-    alert('Exclusão ainda não habilitada nesta versão (migrando para Supabase).');
+  const handleDelete = async (id: string) => {
+    if (!window.confirm('Tem certeza que deseja excluir este produto?')) return;
+    try {
+      await adminData.deleteProduct(id);
+      loadProducts();
+    } catch (e) {
+      alert('Erro ao excluir produto');
+    }
   };
 
   const formatCurrency = (value: number) => {

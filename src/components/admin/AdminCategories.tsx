@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import AdminLayout from './AdminLayout';
 import { fetchCategories } from '@/services/publicData';
+import { adminData } from '@/services/adminData';
 
 interface Category {
   id: string;
@@ -45,7 +46,16 @@ const AdminCategories: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    alert('CRUD ainda não migrado para Supabase. Nesta versão, listagem está funcional; criação/edição/exclusão serão habilitadas na próxima etapa.');
+    try {
+      const payload = { ...formData };
+      const id = editingCategory ? editingCategory.id : null;
+      await adminData.upsertCategory(id, payload);
+      setShowModal(false);
+      setEditingCategory(null);
+      loadCategories();
+    } catch (err) {
+      alert('Erro ao salvar categoria');
+    }
   };
 
   const handleEdit = (category: Category) => {
@@ -61,12 +71,21 @@ const AdminCategories: React.FC = () => {
     setShowModal(true);
   };
 
-  const handleDelete = async (_id: string) => {
-    alert('Exclusão ainda não habilitada nesta versão.');
+  const handleDelete = async (id: string) => {
+    if (!window.confirm('Tem certeza que deseja excluir esta categoria?')) return;
+    try {
+      await adminData.deleteCategory(id);
+      loadCategories();
+    } catch {
+      alert('Erro ao excluir categoria');
+    }
   };
 
-  const handleToggleActive = async (_category: Category) => {
-    alert('Alterar status ainda não habilitado nesta versão.');
+  const handleToggleActive = async (category: Category) => {
+    try {
+      await adminData.upsertCategory(category.id, { is_active: !category.is_active });
+      loadCategories();
+    } catch {}
   };
 
   const generateSlug = (name: string) => {
