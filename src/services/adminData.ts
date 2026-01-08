@@ -65,4 +65,30 @@ export const adminData = {
     const { error } = await supabase.from("coleções").delete().eq("id", id);
     if (error) throw new Error(error.message);
   },
+
+  // Admin users
+  async listAdminUsers() {
+    const { data, error } = await supabase
+      .from("admin_users")
+      .select("id,email,name,role,is_active,created_at,last_login")
+      .order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    return data || [];
+  },
+
+  async upsertAdminUser(id: string | null, payload: any) {
+    if (id) {
+      const { error } = await supabase.from("admin_users").update(payload).eq("id", id);
+      if (error) throw new Error(error.message);
+      return id;
+    }
+    const { data, error } = await supabase.from("admin_users").insert(payload).select("id").single();
+    if (error) throw new Error(error.message);
+    return data?.id;
+  },
+
+  async deleteAdminUser(id: string) {
+    const { error } = await supabase.from("admin_users").delete().eq("id", id);
+    if (error) throw new Error(error.message);
+  },
 };

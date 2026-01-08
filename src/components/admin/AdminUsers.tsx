@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, User, Mail, Shield, AlertCircle } from 'lucide-react';
 import AdminLayout from './AdminLayout';
-import adminService from '../../services/adminService';
+import { adminAuth } from '@/services/adminAuth';
+import { adminData } from '@/services/adminData';
 
 interface AdminUser {
   id: string;
@@ -34,8 +35,8 @@ const AdminUsers: React.FC = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const response = await adminService.getAdminUsers();
-      setUsers(response.users);
+      const rows = await adminData.listAdminUsers();
+      setUsers(rows as any);
     } catch (error) {
       console.error('Erro ao buscar usuários:', error);
     } finally {
@@ -63,18 +64,24 @@ const AdminUsers: React.FC = () => {
 
     try {
       if (editingUser) {
-        // Atualizar usuário
         const updateData = {
           email: formData.email,
           name: formData.name,
           role: formData.role,
-          is_active: formData.is_active
+          is_active: formData.is_active,
         };
-        
-        await adminService.updateAdminUser(editingUser.id, updateData);
+        await adminData.upsertAdminUser(editingUser.id, updateData);
       } else {
-        // Criar novo usuário
-        await adminService.createAdminUser(formData);
+        // Cria usuário na Auth (requer senha mestre configurada em VITE_ADMIN_MASTER_PASSWORD)
+        const auth = await adminAuth.signUp(formData.email, formData.password, import.meta.env.VITE_ADMIN_MASTER_PASSWORD || '');
+        const newId = auth.user?.id || undefined;
+        await adminData.upsertAdminUser(newId || null, {
+          id: newId, // tenta manter o mesmo id da Auth
+          email: formData.email,
+          name: formData.name,
+          role: formData.role,
+          is_active: formData.is_active,
+        });
       }
 
       setShowModal(false);
@@ -103,14 +110,14 @@ const AdminUsers: React.FC = () => {
   };
 
   const handleDelete = async (userId: string) => {
-    if (window.confirm('Tem certeza que deseja excluir este usuário?')) {
-      try {
-        await adminService.deleteAdminUser(userId);
-        fetchUsers();
-      } catch (error) {
-        console.error('Erro ao excluir usuário:', error);
-        alert('Erro ao excluir usuário');
-      }
+    if (!window.confirm('Tem certeza que deseja excluir este usuário?')) return;
+    try {
+      await adminData.deleteAdminUser(userId);
+      // Observação: exclusão do Auth (supabase.auth.admin.deleteUser) requer service role; não disponível no front.
+      fetchUsers();
+    } catch (error) {
+      console.error('Erro ao excluir usuário:', error);
+      alert('Erro ao excluir usuário');
     }
   };
 
