@@ -9,13 +9,13 @@ interface DashboardStats {
   totalProducts: number;
   lowStockProducts: number;
   recentOrders: any[];
-  salesChart: any[];
+  salesList: any[];
 }
 
 const AdminDashboard: React.FC = () => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [dateRange, setDateRange] = useState('7');
+  const [dateRange, setDateRange] = useState('1');
 
   useEffect(() => {
     loadDashboardData();
@@ -24,6 +24,15 @@ const AdminDashboard: React.FC = () => {
   const loadDashboardData = async () => {
     try {
       setLoading(true);
+      const startOfToday = new Date();
+      startOfToday.setHours(0, 0, 0, 0);
+      const startIso = startOfToday.toISOString();
+      const rangeDays = Number(dateRange) || 7;
+      const startRange = new Date();
+      startRange.setDate(startRange.getDate() - rangeDays);
+      startRange.setHours(0, 0, 0, 0);
+      const startRangeIso = startRange.toISOString();
+
       const { count: totalProducts } = await supabase
         .from('products')
         .select('id', { count: 'exact' })
@@ -35,13 +44,39 @@ const AdminDashboard: React.FC = () => {
         .lte('stock', 0)
         .eq('is_active', true);
 
+      const tables = ['pedidos', 'orders'];
+      let totalSales = 0;
+      let todayOrdersCount = 0;
+      let recentOrders: any[] = [];
+      let salesList: any[] = [];
+
+      for (const table of tables) {
+        const list = await supabase
+          .from(table)
+          .select('id,order_number,customer_name,total_amount,order_status,payment_status,created_at')
+          .gte('created_at', startRangeIso)
+          .order('created_at', { ascending: false });
+        if (!list.error && Array.isArray(list.data)) {
+          const rows = list.data as any[];
+          totalSales = rows
+            .filter((r) => (r.payment_status || '').toLowerCase() === 'confirmed')
+            .reduce((sum, r) => sum + Number(r.total_amount || 0), 0);
+          todayOrdersCount = rows.filter(
+            (r) => r.created_at && new Date(r.created_at).getTime() >= new Date(startIso).getTime()
+          ).length;
+          recentOrders = rows.slice(0, 5);
+          salesList = rows.filter((r) => (r.payment_status || '').toLowerCase() === 'confirmed');
+          break;
+        }
+      }
+
       const data: DashboardStats = {
-        totalSales: 0,
-        todayOrders: 0,
+        totalSales: totalSales || 0,
+        todayOrders: todayOrdersCount || 0,
         totalProducts: totalProducts || 0,
         lowStockProducts: lowStockProducts || 0,
-        recentOrders: [],
-        salesChart: [],
+        recentOrders,
+        salesList,
       };
       setStats(data);
     } catch (error) {
@@ -144,7 +179,7 @@ const AdminDashboard: React.FC = () => {
 
         {/* Charts and Recent Orders */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Sales Chart */}
+          {/* Sales List */}
           <div className="bg-slate-800 rounded-lg p-6 border border-slate-700">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-white">Vendas por Período</h3>
@@ -153,19 +188,37 @@ const AdminDashboard: React.FC = () => {
                 onChange={(e) => setDateRange(e.target.value)}
                 className="bg-slate-700 text-white rounded px-3 py-1 text-sm border border-slate-600"
               >
+                <option value="1">Último dia</option>
                 <option value="7">Últimos 7 dias</option>
                 <option value="30">Últimos 30 dias</option>
                 <option value="90">Últimos 90 dias</option>
               </select>
             </div>
-            <div className="h-64 flex items-center justify-center text-slate-400">
-              <div className="text-center">
-                <svg className="w-16 h-16 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
-                <p>Gráfico de vendas será implementado</p>
-                <p className="text-sm mt-1">Integração com Chart.js ou Recharts</p>
-              </div>
+            <div className="space-y-3">
+              {stats?.salesList && stats.salesList.length > 0 ? (
+                stats.salesList.map((order) => (
+                  <div key={order.id} className="flex items-center justify-between p-3 bg-slate-700/30 rounded">
+                    <div className="min-w-0">
+                      <p className="text-white font-medium truncate">#{order.order_number}</p>
+                      <p className="text-slate-400 text-sm truncate">{order.customer_name}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-white font-medium">{formatCurrency(Number(order.total_amount || 0))}</p>
+                      <span className={`text-xs px-2 py-1 rounded-full ${
+                        (order.payment_status || '').toLowerCase() === 'confirmed'
+                          ? 'bg-green-500/20 text-green-400'
+                          : 'bg-red-500/20 text-red-400'
+                      }`}>
+                        {(order.payment_status || '').toLowerCase() === 'confirmed' ? 'Pagamento Confirmado' : 'Pagamento Pendente'}
+                      </span>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-10 text-slate-400">
+                  <p>Nenhuma venda no período selecionado</p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -188,13 +241,11 @@ const AdminDashboard: React.FC = () => {
                     <div className="text-right">
                       <p className="text-white font-medium">{formatCurrency(order.total_amount)}</p>
                       <span className={`text-xs px-2 py-1 rounded-full ${
-                        order.order_status === 'paid' ? 'bg-green-500/20 text-green-400' :
-                        order.order_status === 'processing' ? 'bg-blue-500/20 text-blue-400' :
-                        order.order_status === 'shipped' ? 'bg-yellow-500/20 text-yellow-400' :
-                        order.order_status === 'delivered' ? 'bg-purple-500/20 text-purple-400' :
-                        'bg-red-500/20 text-red-400'
+                        (order.payment_status || '').toLowerCase() === 'confirmed'
+                          ? 'bg-green-500/20 text-green-400'
+                          : 'bg-red-500/20 text-red-400'
                       }`}>
-                        {getStatusLabel(order.order_status)}
+                        {(order.payment_status || '').toLowerCase() === 'confirmed' ? 'Pagamento Confirmado' : 'Pagamento Pendente'}
                       </span>
                     </div>
                   </div>
