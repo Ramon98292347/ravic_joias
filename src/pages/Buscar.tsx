@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
 import ProductCard from "@/components/product/ProductCard";
-import { getApiBaseUrl } from "@/lib/api";
+import { fetchProducts } from "@/services/publicData";
 
 interface Product {
   id: string;
@@ -47,18 +47,8 @@ const Buscar = () => {
     setHasSearched(true);
 
     try {
-      const baseUrl = getApiBaseUrl();
-      console.log("Buscando produtos por:", searchTerm);
-      
-      const res = await fetch(`${baseUrl}/api/public/products?search=${encodeURIComponent(searchTerm)}&limit=20`);
-      console.log("Resposta da busca:", res.status, res.statusText);
-      
-      if (!res.ok) throw new Error(`Erro na busca: ${res.status}`);
-      
-      const data = await res.json();
-      console.log("Produtos encontrados:", data.products?.length || 0);
-      
-      setProducts(Array.isArray(data?.products) ? data.products : []);
+      const { products } = await fetchProducts({ search: searchTerm, limit: 20 });
+      setProducts(Array.isArray(products) ? products : []);
     } catch (error) {
       console.error("Erro ao buscar produtos:", error);
       setProducts([]);

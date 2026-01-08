@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import OptimizedImage from "@/components/OptimizedImage";
-import { getApiBaseUrl } from "@/lib/api";
+import { fetchCollections } from "@/services/publicData";
 
 interface Collection {
   id: string;
@@ -17,21 +17,17 @@ const Categories = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const baseUrl = getApiBaseUrl();
     const load = async () => {
       try {
         setLoading(true);
-        const res = await fetch(`${baseUrl}/api/public/collections`);
-        if (!res.ok) throw new Error("Erro ao buscar coleções");
-        const data = await res.json();
-        setCollections(Array.isArray(data?.collections) ? data.collections : []);
+        const data = await fetchCollections();
+        setCollections(Array.isArray(data) ? data : []);
       } catch {
         setCollections([]);
       } finally {
         setLoading(false);
       }
     };
-
     load();
   }, []);
 

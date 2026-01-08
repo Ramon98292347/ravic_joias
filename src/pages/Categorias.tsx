@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
-import { getApiBaseUrl } from "@/lib/api";
+import { fetchCategories } from "@/services/publicData";
 
 interface Category {
   id: string;
@@ -22,18 +22,8 @@ const Categorias = () => {
   useEffect(() => {
     const loadCategories = async () => {
       try {
-        const baseUrl = getApiBaseUrl();
-        console.log("Buscando categorias de:", `${baseUrl}/api/public/categories`);
-        
-        const res = await fetch(`${baseUrl}/api/public/categories`);
-        console.log("Resposta da API de categorias:", res.status, res.statusText);
-        
-        if (!res.ok) throw new Error(`Erro ao buscar categorias: ${res.status}`);
-        
-        const data = await res.json();
-        console.log("Dados de categorias recebidos:", data);
-        
-        setCategories(Array.isArray(data?.categories) ? data.categories : []);
+        const data = await fetchCategories();
+        setCategories(Array.isArray(data) ? data : []);
       } catch (error) {
         console.error("Erro ao carregar categorias:", error);
         setCategories([]);

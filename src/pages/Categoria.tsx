@@ -6,7 +6,7 @@ import Header from "@/components/layout/Header";
 import MobileBar from "@/components/layout/MobileBar";
 import ProductCard from "@/components/product/ProductCard";
 import WhatsAppButton from "@/components/layout/WhatsAppButton";
-import { getApiBaseUrl } from "@/lib/api";
+import { fetchCategories, fetchCollections, fetchProducts } from "@/services/publicData";
 
 interface PublicCategory {
   id: string;
@@ -47,7 +47,7 @@ const getApiBase = () => getApiBaseUrl();
 
 const Categoria = () => {
   const { slug } = useParams<{ slug: string }>();
-  const baseUrl = useMemo(() => getApiBase(), []);
+  const baseUrl = useMemo(() => "", []);
   const [loading, setLoading] = useState(true);
   const [source, setSource] = useState<Source | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
@@ -62,16 +62,8 @@ const Categoria = () => {
       setProducts([]);
 
       try {
-        const [categoriesRes, collectionsRes] = await Promise.all([
-          fetch(`${baseUrl}/api/public/categories`),
-          fetch(`${baseUrl}/api/public/collections`),
-        ]);
-
-        const categoriesJson = categoriesRes.ok ? await categoriesRes.json() : null;
-        const collectionsJson = collectionsRes.ok ? await collectionsRes.json() : null;
-
-        const categories: PublicCategory[] = Array.isArray(categoriesJson?.categories) ? categoriesJson.categories : [];
-        const collections: PublicCollection[] = Array.isArray(collectionsJson?.collections) ? collectionsJson.collections : [];
+        const categories: PublicCategory[] = await fetchCategories();
+        const collections: PublicCollection[] = await fetchCollections();
 
         const matchedCategory = categories.find((c) => c?.slug === slug);
         const matchedCollection = matchedCategory ? null : collections.find((c) => c?.slug === slug);
@@ -97,18 +89,9 @@ const Categoria = () => {
 
         setSource(nextSource);
 
-        const queryParam = nextSource.kind === "category" ? "category" : "collection";
-        const productsRes = await fetch(
-          `${baseUrl}/api/public/products?page=1&limit=200&${queryParam}=${encodeURIComponent(nextSource.id)}`
-        );
-
-        if (!productsRes.ok) {
-          setProducts([]);
-          return;
-        }
-
-        const productsJson = await productsRes.json();
-        setProducts(Array.isArray(productsJson?.products) ? productsJson.products : []);
+        const queryParam = nextSource.kind === "category" ? { category: nextSource.id } : { collection: nextSource.id };
+        const { products } = await fetchProducts({ page: 1, limit: 200, ...queryParam });
+        setProducts(Array.isArray(products) ? products : []);
       } catch {
         setProducts([]);
       } finally {
