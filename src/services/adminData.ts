@@ -193,4 +193,20 @@ export const adminData = {
     const { error } = await supabase.from("imagens_do_produto").delete().eq("id", imageId);
     if (error) throw new Error(error.message);
   },
+
+  // Settings
+  async listSettings(): Promise<Array<{ key: string; value: string | null; type: string }>> {
+    const { data, error } = await supabase
+      .from("settings")
+      .select("key,value,type")
+      .order("key", { ascending: true });
+    if (error) throw new Error(error.message);
+    return (data as any) || [];
+  },
+
+  async upsertSettings(items: Array<{ key: string; value: string | null; type: string }>, updatedBy?: string | null) {
+    const rows = items.map((i) => ({ ...i, updated_by: updatedBy ?? null, updated_at: new Date().toISOString() }));
+    const { error } = await supabase.from("settings").upsert(rows, { onConflict: "key" });
+    if (error) throw new Error(error.message);
+  },
 };

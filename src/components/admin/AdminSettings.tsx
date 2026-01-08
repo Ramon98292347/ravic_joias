@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import AdminLayout from './AdminLayout';
-import adminService from '../../services/adminService';
+import { adminData } from '@/services/adminData';
+import { adminAuth } from '@/services/adminAuth';
 
 interface Settings {
   free_shipping: boolean;
@@ -38,10 +39,19 @@ const AdminSettings: React.FC = () => {
 
   const loadSettings = async () => {
     try {
-      const response = await adminService.getSettings();
+      const rows = await adminData.listSettings();
+      const get = (k: string) => rows.find((r) => r.key === k)?.value ?? '';
       setSettings({
-        ...response.settings,
+        free_shipping: (rows.find(r => r.key === 'free_shipping')?.value === 'true') || false,
+        free_shipping_minimum: parseFloat(get('free_shipping_minimum')) || 0,
+        whatsapp_number: get('whatsapp_number'),
+        contact_email: get('contact_email'),
+        facebook_url: get('facebook_url'),
+        instagram_url: get('instagram_url'),
+        main_banner_text: get('main_banner_text'),
+        main_banner_subtitle: get('main_banner_subtitle'),
         main_banner_image: null,
+        main_banner_image_url: get('main_banner_image_url'),
       });
     } catch (error) {
       console.error('Error loading settings:', error);
@@ -73,7 +83,28 @@ const AdminSettings: React.FC = () => {
     setSaving(true);
 
     try {
-      await adminService.updateSettings(settings);
+      // Upload banner image if provided
+      let bannerUrl = settings.main_banner_image_url;
+      if (settings.main_banner_image) {
+        const bucket = import.meta.env.VITE_STORAGE_BUCKET || 'product-images';
+        const path = `settings/banner/${Date.now()}-${settings.main_banner_image.name}`;
+        const { publicUrl } = await adminData.uploadToStorage(bucket, path, settings.main_banner_image);
+        bannerUrl = publicUrl;
+      }
+
+      const user = await adminAuth.getCurrentUser().catch(() => null);
+      const updaterId = user?.id || null;
+      await adminData.upsertSettings([
+        { key: 'free_shipping', value: String(settings.free_shipping), type: 'boolean' },
+        { key: 'free_shipping_minimum', value: String(settings.free_shipping_minimum), type: 'decimal' },
+        { key: 'whatsapp_number', value: settings.whatsapp_number, type: 'string' },
+        { key: 'contact_email', value: settings.contact_email, type: 'string' },
+        { key: 'facebook_url', value: settings.facebook_url, type: 'string' },
+        { key: 'instagram_url', value: settings.instagram_url, type: 'string' },
+        { key: 'main_banner_text', value: settings.main_banner_text, type: 'string' },
+        { key: 'main_banner_subtitle', value: settings.main_banner_subtitle, type: 'string' },
+        { key: 'main_banner_image_url', value: bannerUrl, type: 'string' },
+      ], updaterId);
       alert('Configurações salvas com sucesso!');
     } catch (error) {
       console.error('Error saving settings:', error);
