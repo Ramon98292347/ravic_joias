@@ -6,6 +6,7 @@ import Header from "@/components/layout/Header";
 import MobileBar from "@/components/layout/MobileBar";
 import ProductCard from "@/components/product/ProductCard";
 import WhatsAppButton from "@/components/layout/WhatsAppButton";
+import { getApiBaseUrl } from "@/lib/api";
 
 interface PublicCategory {
   id: string;
@@ -42,17 +43,11 @@ type Source =
   | { kind: "category"; id: string; name: string; description: string }
   | { kind: "collection"; id: string; name: string; description: string };
 
-const getApiBaseUrl = () => {
-  const rawApiUrl = import.meta.env.VITE_API_URL || "http://localhost:3001";
-  const withoutTrailingSlash = String(rawApiUrl).replace(/\/$/, "");
-  return withoutTrailingSlash.endsWith("/api")
-    ? withoutTrailingSlash.slice(0, -4)
-    : withoutTrailingSlash;
-};
+const getApiBase = () => getApiBaseUrl();
 
 const Categoria = () => {
   const { slug } = useParams<{ slug: string }>();
-  const baseUrl = useMemo(() => getApiBaseUrl(), []);
+  const baseUrl = useMemo(() => getApiBase(), []);
   const [loading, setLoading] = useState(true);
   const [source, setSource] = useState<Source | null>(null);
   const [products, setProducts] = useState<Product[]>([]);

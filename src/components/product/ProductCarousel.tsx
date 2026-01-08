@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import ProductCard from "./ProductCard";
+import { getApiBaseUrl } from "@/lib/api";
 
 interface Product {
   id: string;
@@ -25,7 +26,7 @@ const ProductCarousel = () => {
   useEffect(() => {
     const loadProducts = async () => {
       try {
-        const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:3001";
+        const baseUrl = getApiBaseUrl();
         console.log("Buscando produtos de:", `${baseUrl}/api/public/products?page=1&limit=12`);
         const res = await fetch(`${baseUrl}/api/public/products?page=1&limit=12`);
         console.log("Resposta da API:", res.status, res.statusText);

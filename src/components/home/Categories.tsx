@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import OptimizedImage from "@/components/OptimizedImage";
+import { getApiBaseUrl } from "@/lib/api";
 
 interface Collection {
   id: string;
@@ -16,9 +17,7 @@ const Categories = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const rawApiUrl = import.meta.env.VITE_API_URL || "http://localhost:3001";
-    const baseUrl = rawApiUrl.endsWith("/api") ? rawApiUrl.slice(0, -4) : rawApiUrl.replace(/\/$/, "");
-
+    const baseUrl = getApiBaseUrl();
     const load = async () => {
       try {
         setLoading(true);

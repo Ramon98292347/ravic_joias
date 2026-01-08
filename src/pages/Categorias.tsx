@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
+import { getApiBaseUrl } from "@/lib/api";
 
 interface Category {
   id: string;
@@ -21,7 +22,7 @@ const Categorias = () => {
   useEffect(() => {
     const loadCategories = async () => {
       try {
-        const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:3001";
+        const baseUrl = getApiBaseUrl();
         console.log("Buscando categorias de:", `${baseUrl}/api/public/categories`);
         
         const res = await fetch(`${baseUrl}/api/public/categories`);

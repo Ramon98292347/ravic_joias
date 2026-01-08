@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
 import ProductCard from "@/components/product/ProductCard";
+import { getApiBaseUrl } from "@/lib/api";
 
 interface Product {
   id: string;
@@ -46,7 +47,7 @@ const Buscar = () => {
     setHasSearched(true);
 
     try {
-      const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:3001";
+      const baseUrl = getApiBaseUrl();
       console.log("Buscando produtos por:", searchTerm);
       
       const res = await fetch(`${baseUrl}/api/public/products?search=${encodeURIComponent(searchTerm)}&limit=20`);
