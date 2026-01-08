@@ -18,10 +18,13 @@ const PORT = process.env.PORT || 3001;
 
 // Security middleware
 app.use(helmet());
-app.use(cors({
-  origin: ['http://localhost:8080', 'http://localhost:8081', 'http://localhost:8082'],
-  credentials: true
-}));
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  'http://localhost:8080',
+  'http://localhost:8081',
+  'http://localhost:8082'
+].filter(Boolean);
+app.use(cors({ origin: allowedOrigins, credentials: true }));
 
 // Rate limiting
 const limiter = rateLimit({
