@@ -1,17 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import AdminLayout from './AdminLayout';
-import adminService from '../../services/adminService';
+import { fetchProducts } from '@/services/publicData';
+import { adminData } from '@/services/adminData';
 
 interface CarouselItem {
   id: string;
   product_id: string;
-  product: {
-    id: string;
-    name: string;
-    price: number;
-    promotional_price?: number;
-    images: { image_url: string; is_primary: boolean }[];
-  };
+  product?: Product;
   sort_order: number;
   is_active: boolean;
 }
@@ -21,7 +16,7 @@ interface Product {
   name: string;
   price: number;
   promotional_price?: number;
-  images: { image_url: string; is_primary: boolean }[];
+  images?: { url: string; is_primary?: boolean | null }[] | null;
 }
 
 const AdminCarousel: React.FC = () => {
@@ -39,10 +34,18 @@ const AdminCarousel: React.FC = () => {
 
   const loadCarouselItems = async () => {
     try {
-      const response = await adminService.getCarouselItems();
-      setCarouselItems(response.items || []);
-      setAutoPlay(response.auto_play || true);
-      setTransitionTime(response.transition_time || 4);
+      const rows = await adminData.listCarouselItems();
+      // Enriquecer com dados do produto
+      const ids = rows.map((r: any) => r.product_id).filter(Boolean);
+      let products: Record<string, Product> = {};
+      if (ids.length > 0) {
+        const { products: found } = await fetchProducts({ page: 1, limit: 200 });
+        for (const p of found) {
+          products[p.id] = p as Product;
+        }
+      }
+      const items = rows.map((r: any) => ({ ...r, product: products[r.product_id] }));
+      setCarouselItems(items);
     } catch (error) {
       console.error('Error loading carousel items:', error);
     }
@@ -50,8 +53,8 @@ const AdminCarousel: React.FC = () => {
 
   const loadAvailableProducts = async () => {
     try {
-      const response = await adminService.getProducts({ is_new: true, is_active: true });
-      setAvailableProducts(response.products || []);
+      const { products } = await fetchProducts({ page: 1, limit: 200, isNew: true });
+      setAvailableProducts(products || []);
     } catch (error) {
       console.error('Error loading available products:', error);
     } finally {
@@ -63,14 +66,11 @@ const AdminCarousel: React.FC = () => {
     if (!selectedProduct) return;
 
     try {
-      const newItem = {
+      await adminData.addCarouselItem({
         product_id: selectedProduct,
         sort_order: carouselItems.length + 1,
         is_active: true,
-      };
-
-      const updatedItems = [...carouselItems, newItem];
-      await adminService.updateCarouselItems(updatedItems);
+      });
       
       setSelectedProduct('');
       loadCarouselItems();
@@ -81,14 +81,13 @@ const AdminCarousel: React.FC = () => {
 
   const handleRemoveProduct = async (index: number) => {
     try {
-      const updatedItems = carouselItems.filter((_, i) => i !== index);
-      // Reorder items
-      const reorderedItems = updatedItems.map((item, i) => ({
-        ...item,
-        sort_order: i + 1,
-      }));
-      
-      await adminService.updateCarouselItems(reorderedItems);
+      const item = carouselItems[index];
+      if (item?.id) await adminData.deleteCarouselItem(item.id);
+      // Reordenar todos os demais
+      const remaining = carouselItems.filter((_, i) => i !== index);
+      await Promise.all(
+        remaining.map((it, i) => adminData.updateCarouselItem(it.id, { sort_order: i + 1 }))
+      );
       loadCarouselItems();
     } catch (error) {
       console.error('Error removing product from carousel:', error);
@@ -102,12 +101,7 @@ const AdminCarousel: React.FC = () => {
       items.splice(toIndex, 0, movedItem);
       
       // Reorder items
-      const reorderedItems = items.map((item, i) => ({
-        ...item,
-        sort_order: i + 1,
-      }));
-      
-      await adminService.updateCarouselItems(reorderedItems);
+      await Promise.all(items.map((item, i) => adminData.updateCarouselItem(item.id, { sort_order: i + 1 })));
       loadCarouselItems();
     } catch (error) {
       console.error('Error reordering carousel items:', error);
@@ -116,11 +110,8 @@ const AdminCarousel: React.FC = () => {
 
   const handleToggleActive = async (index: number) => {
     try {
-      const updatedItems = carouselItems.map((item, i) => 
-        i === index ? { ...item, is_active: !item.is_active } : item
-      );
-      
-      await adminService.updateCarouselItems(updatedItems);
+      const item = carouselItems[index];
+      await adminData.updateCarouselItem(item.id, { is_active: !item.is_active });
       loadCarouselItems();
     } catch (error) {
       console.error('Error toggling carousel item:', error);
@@ -143,9 +134,9 @@ const AdminCarousel: React.FC = () => {
     }).format(value);
   };
 
-  const getPrimaryImage = (product: Product) => {
-    const primaryImage = product.images?.find(img => img.is_primary);
-    return primaryImage?.image_url || '/placeholder-product.jpg';
+  const getPrimaryImage = (product?: Product) => {
+    const primaryImage = product?.images?.find(img => img?.is_primary) || product?.images?.[0];
+    return primaryImage?.url || '/placeholder.svg';
   };
 
   if (loading) {

@@ -91,4 +91,34 @@ export const adminData = {
     const { error } = await supabase.from("admin_users").delete().eq("id", id);
     if (error) throw new Error(error.message);
   },
+
+  // Carousel items
+  async listCarouselItems() {
+    const { data, error } = await supabase
+      .from("itens_do_carrossel")
+      .select("id,product_id,sort_order,is_active")
+      .order("sort_order", { ascending: true });
+    if (error) throw new Error(error.message);
+    return data || [];
+  },
+
+  async addCarouselItem(payload: { product_id: string; sort_order: number; is_active: boolean }) {
+    const { data, error } = await supabase
+      .from("itens_do_carrossel")
+      .insert(payload)
+      .select("id")
+      .single();
+    if (error) throw new Error(error.message);
+    return data?.id as string;
+  },
+
+  async deleteCarouselItem(id: string) {
+    const { error } = await supabase.from("itens_do_carrossel").delete().eq("id", id);
+    if (error) throw new Error(error.message);
+  },
+
+  async updateCarouselItem(id: string, payload: Partial<{ sort_order: number; is_active: boolean }>) {
+    const { error } = await supabase.from("itens_do_carrossel").update(payload).eq("id", id);
+    if (error) throw new Error(error.message);
+  },
 };
