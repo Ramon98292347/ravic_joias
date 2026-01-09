@@ -17,13 +17,30 @@ router.get('/categories', async (req, res) => {
 
     let coverByCategoryId = {};
     if (categoryIds.length > 0) {
-      const { data: products, error: productsError } = await supabase
-        .from('products')
-        .select('id,category_id,created_at,images:imagens_do_produto(url,is_primary,sort_order)')
-        .eq('is_active', true)
-        .in('category_id', categoryIds)
-        .order('created_at', { ascending: false })
-        .limit(200);
+      const selectClauses = [
+        'id,category_id,created_at,images:imagens_do_produto(url,is_primary,sort_order)',
+        'id,category_id,created_at,images:product_images(url,is_primary,sort_order)',
+        'id,category_id,created_at'
+      ];
+
+      let products = [];
+      let productsError = null;
+
+      for (const selectClause of selectClauses) {
+        const res = await supabase
+          .from('products')
+          .select(selectClause)
+          .eq('is_active', true)
+          .in('category_id', categoryIds)
+          .order('created_at', { ascending: false })
+          .limit(200);
+
+        productsError = res.error;
+        if (!res.error) {
+          products = res.data || [];
+          break;
+        }
+      }
 
       if (!productsError) {
         for (const product of products || []) {
@@ -87,40 +104,39 @@ router.get('/products', async (req, res) => {
 
     const offset = (page - 1) * limit;
 
-    let query = supabase
-      .from('products')
-      .select(`
-        *,
-        category:categories(id,name,slug,description),
-        collection:coleções(id,name,slug,description),
-        images:imagens_do_produto(id,url,alt_text,sort_order,is_primary,storage_path,bucket_name)
-      `, { count: 'exact' })
-      .eq('is_active', true)
-      .range(offset, offset + limit - 1)
-      .order('created_at', { ascending: false });
+    const attempts = [
+      `*,category:categories(id,name,slug,description),collection:coleções(id,name,slug,description),images:imagens_do_produto(id,url,alt_text,sort_order,is_primary,storage_path,bucket_name)`,
+      `*,category:categories(id,name,slug,description),collection:coleções(id,name,slug,description),images:product_images(id,url,alt_text,sort_order,is_primary,storage_path,bucket_name)`,
+      `*,category:categories(id,name,slug,description),collection:collections(id,name,slug,description),images:product_images(id,url,alt_text,sort_order,is_primary,storage_path,bucket_name)`,
+      `*,category:categories(id,name,slug,description)`
+    ];
 
-    // Apply filters
-    if (category && category !== 'all') {
-      query = query.eq('category_id', category);
+    let products = [];
+    let count = 0;
+    let error = null;
+
+    for (const selectClause of attempts) {
+      let q = supabase
+        .from('products')
+        .select(selectClause, { count: 'exact' })
+        .eq('is_active', true)
+        .range(offset, offset + limit - 1)
+        .order('created_at', { ascending: false });
+
+      if (category && category !== 'all') q = q.eq('category_id', category);
+      if (collection && collection !== 'all') q = q.eq('collection_id', collection);
+      if (search) q = q.or(`name.ilike.%${search}%,description.ilike.%${search}%`);
+      if (featured === 'true') q = q.eq('is_featured', true);
+      if (isNew === 'true') q = q.eq('is_new', true);
+
+      const res = await q;
+      error = res.error;
+      if (!res.error) {
+        products = res.data || [];
+        count = res.count || 0;
+        break;
+      }
     }
-
-    if (collection && collection !== 'all') {
-      query = query.eq('collection_id', collection);
-    }
-
-    if (search) {
-      query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%`);
-    }
-
-    if (featured === 'true') {
-      query = query.eq('is_featured', true);
-    }
-
-    if (isNew === 'true') {
-      query = query.eq('is_new', true);
-    }
-
-    const { data: products, error, count } = await query;
 
     if (error) {
       console.error('Erro ao buscar produtos:', error);

@@ -31,16 +31,23 @@ export const cartService = {
 
   async listItems(): Promise<CartItem[]> {
     const cid = this.getCartId();
-    const { data, error } = await supabase
-      .from("shopping_cart_items")
-      .select(
-        `id,cart_id,product_id,quantity,unit_price,total_price,customization,
-         product:products(id,name,price,promotional_price,images:imagens_do_produto(url,is_primary,sort_order))`
-      )
-      .eq("cart_id", cid)
-      .order("created_at", { ascending: true });
-    if (error) return [];
-    return (data as any) || [];
+    const attempts: string[] = [
+      `id,cart_id,product_id,quantity,unit_price,total_price,customization,product:products(id,name,price,promotional_price,images:imagens_do_produto(url,is_primary,sort_order))`,
+      `id,cart_id,product_id,quantity,unit_price,total_price,customization,product:products(id,name,price,promotional_price,images:product_images(url,is_primary,sort_order))`,
+      `id,cart_id,product_id,quantity,unit_price,total_price,customization,product:products(id,name,price,promotional_price)`
+    ];
+
+    for (const selectClause of attempts) {
+      const { data, error } = await supabase
+        .from("shopping_cart_items")
+        .select(selectClause)
+        .eq("cart_id", cid)
+        .order("created_at", { ascending: true });
+
+      if (!error) return (data as any) || [];
+    }
+
+    return [];
   },
 
   async addItem(productId: string, quantity: number, unitPrice: number, customization?: any): Promise<void> {

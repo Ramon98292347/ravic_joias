@@ -1,10 +1,28 @@
-require('dotenv').config();
-require('dotenv').config({ path: '../.env' });
+const path = require('path');
+const dotenv = require('dotenv');
+const crypto = require('crypto');
+
+dotenv.config({ path: path.resolve(__dirname, '.env'), override: true });
+dotenv.config({ path: path.resolve(__dirname, '..', '.env'), override: true });
+
+const isProd = process.env.NODE_ENV === 'production';
+
+if (process.env.VITE_SUPABASE_URL && (!isProd || !process.env.SUPABASE_URL)) {
+  process.env.SUPABASE_URL = process.env.VITE_SUPABASE_URL;
+}
+
+if (process.env.VITE_SUPABASE_KEY && (!isProd || !process.env.SUPABASE_KEY)) {
+  process.env.SUPABASE_KEY = process.env.VITE_SUPABASE_KEY;
+}
+
+if (process.env.VITE_FRONTEND_URL && (!isProd || !process.env.FRONTEND_URL)) {
+  process.env.FRONTEND_URL = process.env.VITE_FRONTEND_URL;
+}
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
-const path = require('path');
+ 
 
 const authRoutes = require('./routes/auth');
 const adminRoutes = require('./routes/admin');
@@ -78,6 +96,11 @@ app.listen(PORT, () => {
   console.log(`🚀 Servidor rodando na porta ${PORT}`);
   console.log(`📡 Ambiente: ${process.env.NODE_ENV}`);
   console.log(`🔐 Supabase URL: ${process.env.SUPABASE_URL ? 'Configurada' : 'Não configurada'}`);
+  if (process.env.NODE_ENV === 'development') {
+    const key = process.env.SUPABASE_KEY || '';
+    const hash = crypto.createHash('sha256').update(key).digest('hex').slice(0, 12);
+    console.log(`🔐 Supabase Key Hash: ${hash}`);
+  }
 });
 
 module.exports = app;
