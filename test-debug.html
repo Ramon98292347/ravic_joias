@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Produtos - Debug</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .log { background: #f0f0f0; padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .error { background: #ffebee; color: #c62828; }
+        .success { background: #e8f5e8; color: #2e7d32; }
+        .product { border: 1px solid #ddd; padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .loading { color: #666; font-style: italic; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Teste de Carregamento de Produtos</h1>
+    <div id="logs"></div>
+    <div id="products"></div>
+
+    <script type="module">
+        // Config do Supabase (vamos pegar do window)
+        const supabaseUrl = 'https://czuokqkoycdeajmzzdap.supabase.co';
+        const supabaseKey = 'sb_publishable_mmC0MJ2J0HqxubT67sxkbw_dGZyQyUC';
+
+        const logsDiv = document.getElementById('logs');
+        const productsDiv = document.getElementById('products');
+
+        function log(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `log ${type}`;
+            div.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logsDiv.appendChild(div);
+            console.log(message);
+        }
+
+        async function testSupabaseDirect() {
+            log('🎯 Iniciando teste direto do Supabase...');
+            
+            try {
+                // Testar carregamento do Supabase
+                log('📚 Carregando Supabase...');
+                const { createClient } = await import('https://cdn.skypack.dev/@supabase/supabase-js@2');
+                const supabase = createClient(supabaseUrl, supabaseKey);
+                log('✅ Supabase carregado com sucesso!');
+
+                // Teste 1: Query simples
+                log('🔍 Teste 1: Query simples de produtos...');
+                const { data: simpleData, error: simpleError } = await supabase
+                    .from('products')
+                    .select('id,name,price,is_active')
+                    .eq('is_active', true)
+                    .limit(3);
+
+                if (simpleError) {
+                    log(`❌ Erro na query simples: ${simpleError.message}`, 'error');
+                } else {
+                    log(`✅ Query simples OK: ${simpleData.length} produtos`, 'success');
+                    log(`📋 Produtos: ${simpleData.map(p => p.name).join(', ')}`);
+                }
+
+                // Teste 2: Query com categoria
+                log('🔍 Teste 2: Query com categoria...');
+                const { data: categoryData, error: categoryError } = await supabase
+                    .from('products')
+                    .select('id,name,price,category:categories(id,name,slug)')
+                    .eq('is_active', true)
+                    .limit(3);
+
+                if (categoryError) {
+                    log(`❌ Erro na query com categoria: ${categoryError.message}`, 'error');
+                } else {
+                    log(`✅ Query com categoria OK: ${categoryData.length} produtos`, 'success');
+                }
+
+                // Teste 3: Query com imagens
+                log('🔍 Teste 3: Query com imagens...');
+                const { data: imagesData, error: imagesError } = await supabase
+                    .from('products')
+                    .select('id,name,price,images:imagens_do_produto(url,is_primary)')
+                    .eq('is_active', true)
+                    .limit(3);
+
+                if (imagesError) {
+                    log(`❌ Erro na query com imagens: ${imagesError.message}`, 'error');
+                } else {
+                    log(`✅ Query com imagens OK: ${imagesData.length} produtos`, 'success');
+                }
+
+                // Mostrar produtos
+                if (simpleData && simpleData.length > 0) {
+                    log('📦 Exibindo produtos encontrados...');
+                    simpleData.forEach(product => {
+                        const productDiv = document.createElement('div');
+                        productDiv.className = 'product';
+                        productDiv.innerHTML = `
+                            <h3>${product.name}</h3>
+                            <p>ID: ${product.id}</p>
+                            <p>Preço: R$ ${product.price}</p>
+                            <p>Ativo: ${product.is_active ? 'Sim' : 'Não'}</p>
+                        `;
+                        productsDiv.appendChild(productDiv);
+                    });
+                }
+
+                // Teste 4: Verificar tabela de carrossel
+                log('🔍 Teste 4: Verificando itens do carrossel...');
+                const { data: carouselData, error: carouselError } = await supabase
+                    .from('itens_do_carrossel')
+                    .select('*')
+                    .eq('is_active', true)
+                    .limit(3);
+
+                if (carouselError) {
+                    log(`❌ Erro ao buscar carrossel: ${carouselError.message}`, 'error');
+                } else {
+                    log(`✅ Itens do carrossel: ${carouselData.length}`, 'success');
+                }
+
+            } catch (error) {
+                log(`❌ Erro geral: ${error.message}`, 'error');
+                console.error('Erro completo:', error);
+            }
+
+            log('🏁 Teste finalizado!');
+        }
+
+        // Iniciar o teste
+        testSupabaseDirect();
+    </script>
+</body>
+</html>

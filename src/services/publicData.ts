@@ -76,10 +76,12 @@ export const fetchProducts = async (params: {
   featured?: boolean;
   isNew?: boolean;
 }): Promise<{ products: Product[]; total: number }> => {
+  console.log('🔍 fetchProducts iniciado com params:', params);
   const { page = 1, limit = 20, category, collection, search, featured, isNew } = params;
   const offset = (page - 1) * limit;
 
   const tryQuery = async (selectClause: string) => {
+    console.log('📋 Tentando query com select:', selectClause.substring(0, 100) + '...');
     let query = supabase
       .from("products")
       .select(selectClause, { count: "exact" })
@@ -93,7 +95,13 @@ export const fetchProducts = async (params: {
     if (featured === true) query = query.eq("is_featured", true);
     if (isNew === true) query = query.eq("is_new", true);
 
-    return await query;
+    const result = await query;
+    console.log('📊 Query resultado - Status:', result.status);
+    console.log('📊 Query resultado - Dados:', result.data?.length || 0, 'produtos');
+    console.log('📊 Query resultado - Total:', result.count);
+    console.log('📊 Query resultado - Erro:', result.error);
+    
+    return result;
   };
 
   const attempts: string[] = [
@@ -103,11 +111,19 @@ export const fetchProducts = async (params: {
     `*,category:categories(id,name,slug,description)`
   ];
 
-  for (const selectClause of attempts) {
+  for (let i = 0; i < attempts.length; i++) {
+    const selectClause = attempts[i];
+    console.log(`🔄 Tentativa ${i + 1} de ${attempts.length}`);
     const { data, error, count } = await tryQuery(selectClause);
-    if (!error) return { products: (data as any) || [], total: count || 0 };
+    if (!error) {
+      console.log(`✅ Sucesso na tentativa ${i + 1}!`);
+      return { products: (data as any) || [], total: count || 0 };
+    } else {
+      console.log(`❌ Falha na tentativa ${i + 1}:`, error.message);
+    }
   }
 
+  console.log('🏁 fetchProducts finalizado - nenhuma tentativa funcionou');
   return { products: [], total: 0 };
 };
 
@@ -128,6 +144,7 @@ export type CarouselItem = {
 };
 
 export const fetchCarouselItemsPublic = async (): Promise<CarouselItem[]> => {
+  console.log('🔍 fetchCarouselItemsPublic iniciado');
   const attemptSelects: string[] = [
     `id,product_id,title,subtitle,description,image_url,link_url,button_text,sort_order,is_active,start_date,end_date,product:products(id,name,price,promotional_price,images:imagens_do_produto(id,url,is_primary,sort_order))`,
     `id,product_id,title,subtitle,description,image_url,link_url,button_text,sort_order,is_active,start_date,end_date,product:products(id,name,price,promotional_price,images:product_images(id,url,is_primary,sort_order))`,
@@ -135,18 +152,34 @@ export const fetchCarouselItemsPublic = async (): Promise<CarouselItem[]> => {
   ];
 
   let data: any[] | null = null;
-  for (const selectClause of attemptSelects) {
-    const res = await supabase
-      .from("itens_do_carrossel")
-      .select(selectClause)
-      .eq("is_active", true)
-      .order("sort_order", { ascending: true });
+  for (let i = 0; i < attemptSelects.length; i++) {
+    const selectClause = attemptSelects[i];
+    console.log(`🔄 Tentativa ${i + 1}:`, selectClause.substring(0, 100) + '...');
+    
+    try {
+      const res = await supabase
+        .from("itens_do_carrossel")
+        .select(selectClause)
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true });
 
-    if (!res.error) {
-      data = (res.data || []) as any[];
-      break;
+      console.log(`📊 Tentativa ${i + 1} - Status:`, res.status);
+      console.log(`📊 Tentativa ${i + 1} - Dados:`, res.data?.length || 0, 'itens');
+      console.log(`📊 Tentativa ${i + 1} - Erro:`, res.error);
+
+      if (!res.error) {
+        data = (res.data || []) as any[];
+        console.log(`✅ Sucesso na tentativa ${i + 1}!`);
+        break;
+      } else {
+        console.log(`❌ Falha na tentativa ${i + 1}:`, res.error.message);
+      }
+    } catch (error) {
+      console.log(`❌ Exceção na tentativa ${i + 1}:`, error);
     }
   }
+  
+  console.log('🏁 fetchCarouselItemsPublic finalizado, dados:', data?.length || 0);
 
   if (!data) return [];
   const rows = (data || []) as any[];

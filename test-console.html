@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Teste de Console</title>
+</head>
+<body>
+    <h1>Teste de Console - Verificar erros</h1>
+    <div id="console-output"></div>
+    
+    <script>
+        // Capturar todos os logs do console
+        const consoleOutput = document.getElementById('console-output');
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+        
+        function addToOutput(type, message) {
+            const div = document.createElement('div');
+            div.style.margin = '10px';
+            div.style.padding = '10px';
+            div.style.border = '1px solid #ccc';
+            div.style.fontFamily = 'monospace';
+            div.style.fontSize = '12px';
+            
+            if (type === 'error') {
+                div.style.backgroundColor = '#ffe6e6';
+                div.style.borderColor = '#ff0000';
+            } else if (type === 'warn') {
+                div.style.backgroundColor = '#fff3e6';
+                div.style.borderColor = '#ff8800';
+            } else {
+                div.style.backgroundColor = '#f0f8ff';
+                div.style.borderColor = '#0066cc';
+            }
+            
+            div.innerHTML = `<strong>[${type.toUpperCase()}]</strong> ${new Date().toLocaleTimeString()}<br>${message}`;
+            consoleOutput.appendChild(div);
+            
+            // Scroll para o final
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        }
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addToOutput('log', args.join(' '));
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addToOutput('error', args.join(' '));
+        };
+        
+        console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            addToOutput('warn', args.join(' '));
+        };
+        
+        // Testar se há erros de CORS ou outros
+        console.log('🧪 Iniciando testes...');
+        
+        // Testar fetch para o backend
+        fetch('http://localhost:3001/health')
+            .then(response => console.log('✅ Health check response:', response.status))
+            .catch(error => console.error('❌ Health check error:', error));
+            
+        // Testar fetch para Supabase
+        fetch('https://czuokqkoycdeajmzzdap.supabase.co/rest/v1/products?select=*&limit=1', {
+            headers: {
+                'apikey': 'sb_publishable_mmC0MJ2J0HqxubT67sxkbw_dGZyQyUC',
+                'Authorization': 'Bearer sb_publishable_mmC0MJ2J0HqxubT67sxkbw_dGZyQyUC'
+            }
+        })
+        .then(response => response.json())
+        .then(data => console.log('✅ Supabase response:', data))
+        .catch(error => console.error('❌ Supabase error:', error));
+        
+        console.log('🔄 Testes iniciados, aguarde resultados...');
+    </script>
+</body>
+</html>
