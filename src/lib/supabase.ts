@@ -7,4 +7,11 @@ if (!supabaseUrl || !supabaseKey) {
   throw new Error('VITE_SUPABASE_URL e VITE_SUPABASE_KEY são obrigatórias');
 }
 
-export const supabase = createClient(supabaseUrl, supabaseKey);
+export const supabase = createClient(supabaseUrl, supabaseKey, {
+  global: {
+    headers: {
+      apikey: supabaseKey,
+      Authorization: `Bearer ${supabaseKey}`,
+    },
+  },
+});

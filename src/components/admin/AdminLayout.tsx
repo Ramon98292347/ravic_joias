@@ -22,7 +22,6 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
   const loadUserData = async () => {
     try {
       const userData = await adminAuth.getCurrentUser();
-      await adminData.ensureCurrentAdminUser();
       setUser(userData);
       if (!userData) navigate('/admin/login');
     } catch (error) {
@@ -133,12 +132,12 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
             {/* User Info */}
             <div className="flex items-center space-x-2 sm:space-x-4">
               <div className="hidden sm:block text-right">
-                <p className="text-sm font-medium text-white">{user?.user_metadata?.name || user?.email}</p>
-                <p className="text-xs text-slate-400">{user?.user_metadata?.role || 'admin'}</p>
+                <p className="text-sm font-medium text-white">{user?.name || user?.email}</p>
+                <p className="text-xs text-slate-400">{user?.role || 'admin'}</p>
               </div>
               <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-amber-400 to-amber-600 rounded-full flex items-center justify-center">
                 <span className="text-sm font-bold text-slate-900">
-                  {(user?.user_metadata?.name?.charAt(0) || user?.email?.charAt(0) || 'A').toUpperCase()}
+                  {(user?.name?.charAt(0) || user?.email?.charAt(0) || 'A').toUpperCase()}
                 </span>
               </div>
             </div>

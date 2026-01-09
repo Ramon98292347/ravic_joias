@@ -26,7 +26,7 @@ const AdminLogin: React.FC = () => {
 
     try {
       const data = await adminAuth.signIn(email, password);
-      if (data?.user) navigate('/admin/dashboard');
+      if (data?.token || data?.user) navigate('/admin/dashboard');
     } catch (error: any) {
       setError(error.message || 'Erro ao fazer login');
     } finally {

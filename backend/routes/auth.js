@@ -11,6 +11,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-min-32-characters'
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';
 const MAX_ATTEMPTS = parseInt(process.env.ADMIN_LOGIN_MAX_ATTEMPTS) || 5;
 const BLOCK_TIME = parseInt(process.env.ADMIN_LOGIN_BLOCK_TIME) || 15; // minutes
+const ADMIN_MASTER_PASSWORD = process.env.ADMIN_MASTER_PASSWORD || '';
 
 // Rate limiting for login attempts
 const loginLimiter = rateLimit({
@@ -135,6 +136,74 @@ router.post('/login', loginLimiter, loginValidation, async (req, res) => {
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ error: 'Erro ao realizar login' });
+  }
+});
+
+// Register validation
+const registerValidation = [
+  body('email').isEmail().normalizeEmail().withMessage('Email inválido'),
+  body('password').isLength({ min: 6 }).withMessage('Senha deve ter pelo menos 6 caracteres'),
+  body('masterPassword').isString().withMessage('Senha mestre é obrigatória'),
+  body('name').optional().isString(),
+  body('role').optional().isString(),
+];
+
+// Register route for admin users
+router.post('/register', registerValidation, async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        error: 'Dados inválidos',
+        details: errors.array(),
+      });
+    }
+
+    const { email, password, masterPassword, name = 'Administrador', role = 'admin' } = req.body;
+
+    if (!ADMIN_MASTER_PASSWORD || masterPassword !== ADMIN_MASTER_PASSWORD) {
+      return res.status(403).json({ error: 'Senha mestre inválida' });
+    }
+
+    const { data: existing } = await supabase
+      .from('admin_users')
+      .select('id, email')
+      .eq('email', email)
+      .single();
+
+    if (existing) {
+      return res.status(409).json({ error: 'Email já cadastrado' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const insertPayload = {
+      email,
+      password: hashedPassword,
+      name,
+      role,
+      is_active: true,
+      login_attempts: 0,
+      created_at: new Date(),
+      updated_at: new Date(),
+    };
+
+    const { data: created, error: insertError } = await supabase
+      .from('admin_users')
+      .insert([insertPayload])
+      .select('id, email, name, role, is_active')
+      .single();
+
+    if (insertError) {
+      return res.status(500).json({ error: 'Erro ao criar usuário', details: insertError.message });
+    }
+
+    res.status(201).json({
+      message: 'Administrador criado com sucesso',
+      user: created,
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao registrar usuário' });
   }
 });
 

@@ -40,6 +40,11 @@ const adminService = {
     return response.data;
   },
 
+  register: async (email: string, password: string, masterPassword: string, name?: string, role?: string) => {
+    const response = await api.post('/auth/register', { email, password, masterPassword, name, role });
+    return response.data;
+  },
+
   logout: async () => {
     await api.post('/auth/logout');
     localStorage.removeItem('admin_token');
