@@ -128,7 +128,6 @@ export type CarouselItem = {
 };
 
 export const fetchCarouselItemsPublic = async (): Promise<CarouselItem[]> => {
-  const now = new Date().toISOString();
   const attemptSelects: string[] = [
     `id,product_id,title,subtitle,description,image_url,link_url,button_text,sort_order,is_active,start_date,end_date,product:products(id,name,price,promotional_price,images:imagens_do_produto(id,url,is_primary,sort_order))`,
     `id,product_id,title,subtitle,description,image_url,link_url,button_text,sort_order,is_active,start_date,end_date,product:products(id,name,price,promotional_price,images:product_images(id,url,is_primary,sort_order))`,
@@ -141,7 +140,6 @@ export const fetchCarouselItemsPublic = async (): Promise<CarouselItem[]> => {
       .from("itens_do_carrossel")
       .select(selectClause)
       .eq("is_active", true)
-      .lte("start_date", now)
       .order("sort_order", { ascending: true });
 
     if (!res.error) {
@@ -152,9 +150,7 @@ export const fetchCarouselItemsPublic = async (): Promise<CarouselItem[]> => {
 
   if (!data) return [];
   const rows = (data || []) as any[];
-  // Optionally filter out expired
-  const filtered = rows.filter((r) => !r.end_date || new Date(r.end_date) >= new Date());
-  return filtered.map((r) => ({
+  return rows.map((r) => ({
     id: r.id,
     product_id: r.product_id,
     title: r.title,

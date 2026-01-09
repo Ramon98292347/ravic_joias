@@ -1,6 +1,6 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
-const { authenticateToken, authorizeRole } = require('../middleware/auth');
+const { authenticateToken } = require('../middleware/auth');
 const supabase = require('../config/supabase');
 
 const router = express.Router();
@@ -172,7 +172,6 @@ router.put('/:key',
 
 // Create new setting (admin only)
 router.post('/', 
-  authorizeRole(['admin']),
   [
     body('key').notEmpty().withMessage('Chave é obrigatória'),
     body('value').exists().withMessage('Valor é obrigatório'),
@@ -226,7 +225,7 @@ router.post('/',
 );
 
 // Delete setting (admin only)
-router.delete('/:key', authorizeRole(['admin']), async (req, res) => {
+router.delete('/:key', async (req, res) => {
   try {
     const { key } = req.params;
 

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { getApiBaseUrl } from "@/lib/api";
 import { ArrowRight, Phone, Mail } from "lucide-react";
 
 const Newsletter = () => {
@@ -20,7 +21,8 @@ const Newsletter = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/webhook/contato', {
+      const base = getApiBaseUrl();
+      const response = await fetch(`${base}/api/webhook/contato`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

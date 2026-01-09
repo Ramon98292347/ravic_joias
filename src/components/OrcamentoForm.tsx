@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ShoppingBag, Send, Phone, Mail, User } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { getApiBaseUrl } from "@/lib/api";
 
 interface OrcamentoFormProps {
   cartItems?: Array<{
@@ -42,7 +43,8 @@ const OrcamentoForm = ({ cartItems = [], cartTotal = 0, onSuccess }: OrcamentoFo
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/webhook/orcamento", {
+      const base = getApiBaseUrl();
+      const response = await fetch(`${base}/api/webhook/orcamento`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

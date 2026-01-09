@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import OptimizedImage from "@/components/OptimizedImage";
-import { getApiBaseUrl } from "@/lib/api";
+import { supabase } from "@/lib/supabase";
 
 interface Collection {
   id: string;
@@ -34,18 +34,28 @@ const CollectionsCarousel = () => {
   useEffect(() => {
     const load = async () => {
       try {
-        const baseUrl = getApiBaseUrl();
-        const colRes = await fetch(`${baseUrl}/api/public/collections`);
-        if (!colRes.ok) throw new Error("Erro ao buscar coleções");
-        const colJson = await colRes.json();
-        const collections: Collection[] = Array.isArray(colJson?.collections) ? colJson.collections.slice(0, 5) : [];
+        const { data: cols, error: colsErr } = await supabase
+          .from("coleções")
+          .select("id,name,slug")
+          .eq("is_active", true)
+          .order("sort_order", { ascending: true })
+          .order("name", { ascending: true })
+          .range(0, 4);
+        if (colsErr || !Array.isArray(cols)) throw colsErr || new Error("Falha coleções");
+        const collections: Collection[] = (cols as any[]) as Collection[];
 
-        const productImagesPerCollection = await Promise.all(
+        const perCollection = await Promise.all(
           collections.map(async (c) => {
-            const res = await fetch(`${baseUrl}/api/public/products?page=1&limit=10&collection=${encodeURIComponent(c.id)}`);
-            if (!res.ok) return [] as SlideItem[];
-            const data = await res.json();
-            const products: Product[] = Array.isArray(data?.products) ? data.products : [];
+            const { data: prods } = await supabase
+              .from("products")
+              .select(
+                "id,images:imagens_do_produto(id,url,is_primary,sort_order)"
+              )
+              .eq("is_active", true)
+              .eq("collection_id", c.id)
+              .order("created_at", { ascending: false })
+              .range(0, 9);
+            const products: Product[] = (prods as any[]) || [];
             const images: SlideItem[] = products
               .map((p) => p.images?.find((img) => img?.is_primary)?.url || p.images?.[0]?.url)
               .filter(Boolean)
@@ -55,8 +65,7 @@ const CollectionsCarousel = () => {
           })
         );
 
-        const flattened = productImagesPerCollection.flat();
-        setItems(flattened);
+        setItems(perCollection.flat());
       } catch {
         setItems([]);
       } finally {
@@ -183,4 +192,3 @@ const CollectionsCarousel = () => {
 };
 
 export default CollectionsCarousel;
-

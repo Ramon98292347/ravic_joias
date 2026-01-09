@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import OptimizedImage from "@/components/OptimizedImage";
 import { fetchCollections } from "@/services/publicData";
+import { supabase } from "@/lib/supabase";
 
 interface Collection {
   id: string;
@@ -21,7 +22,30 @@ const Categories = () => {
       try {
         setLoading(true);
         const data = await fetchCollections();
-        setCollections(Array.isArray(data) ? data : []);
+        let rows = Array.isArray(data) ? data : [];
+        if (!rows || rows.length === 0) {
+          const { data: prods } = await supabase
+            .from("products")
+            .select(
+              "id,name,category:categories(slug,name),images:imagens_do_produto(url,is_primary,sort_order)"
+            )
+            .eq("is_active", true)
+            .order("created_at", { ascending: false })
+            .range(0, 9);
+          const list: any[] = (prods as any[]) || [];
+          rows = list.slice(0, 5).map((p) => ({
+            id: p.id,
+            name: p.category?.name || p.name,
+            slug: p.category?.slug || "colecao",
+            description: p.category?.name || "",
+            image_url:
+              p.images?.find((img: any) => img?.is_primary)?.url ||
+              p.images?.[0]?.url ||
+              null,
+            banner_url: null,
+          }));
+        }
+        setCollections(rows);
       } catch {
         setCollections([]);
       } finally {

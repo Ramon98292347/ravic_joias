@@ -16,6 +16,7 @@ const AdminDashboard: React.FC = () => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState('1');
+  const [confirmingPaymentId, setConfirmingPaymentId] = useState<string | null>(null);
 
   useEffect(() => {
     loadDashboardData();
@@ -57,7 +58,7 @@ const AdminDashboard: React.FC = () => {
           .gte('created_at', startRangeIso)
           .order('created_at', { ascending: false });
         if (!list.error && Array.isArray(list.data)) {
-          const rows = list.data as any[];
+          const rows = (list.data as any[]).map((r) => ({ ...r, __table: table }));
           totalSales = rows
             .filter((r) => (r.payment_status || '').toLowerCase() === 'confirmed')
             .reduce((sum, r) => sum + Number(r.total_amount || 0), 0);
@@ -83,6 +84,24 @@ const AdminDashboard: React.FC = () => {
       console.error('Error loading dashboard data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const confirmPayment = async (order: any) => {
+    const table = order?.__table;
+    if (!table || !order?.id) return;
+    try {
+      setConfirmingPaymentId(order.id);
+      const { error } = await supabase
+        .from(table)
+        .update({ payment_status: 'confirmed' })
+        .eq('id', order.id);
+      if (error) throw error;
+      await loadDashboardData();
+    } catch {
+      alert('Não foi possível confirmar o pagamento');
+    } finally {
+      setConfirmingPaymentId(null);
     }
   };
 
@@ -240,13 +259,20 @@ const AdminDashboard: React.FC = () => {
                     </div>
                     <div className="text-right">
                       <p className="text-white font-medium">{formatCurrency(order.total_amount)}</p>
-                      <span className={`text-xs px-2 py-1 rounded-full ${
-                        (order.payment_status || '').toLowerCase() === 'confirmed'
-                          ? 'bg-green-500/20 text-green-400'
-                          : 'bg-red-500/20 text-red-400'
-                      }`}>
-                        {(order.payment_status || '').toLowerCase() === 'confirmed' ? 'Pagamento Confirmado' : 'Pagamento Pendente'}
-                      </span>
+                      {(order.payment_status || '').toLowerCase() === 'confirmed' ? (
+                        <span className="text-xs px-2 py-1 rounded-full bg-green-500/20 text-green-400">
+                          Pagamento Confirmado
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          disabled={confirmingPaymentId === order.id}
+                          onClick={() => confirmPayment(order)}
+                          className="text-xs px-2 py-1 rounded-full bg-red-500/20 text-red-400 hover:bg-red-500/30 disabled:opacity-60"
+                        >
+                          {confirmingPaymentId === order.id ? 'Confirmando...' : 'Pagamento Pendente'}
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))

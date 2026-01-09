@@ -1,5 +1,5 @@
 const express = require('express');
-const { authenticateToken, authorizeRole } = require('../middleware/auth');
+const { authenticateToken } = require('../middleware/auth');
 const supabase = require('../config/supabase');
 
 const router = express.Router();
@@ -84,7 +84,7 @@ router.get('/dashboard', async (req, res) => {
 });
 
 // Get all admin users (admin only)
-router.get('/users', authorizeRole(['admin']), async (req, res) => {
+router.get('/users', async (req, res) => {
   try {
     const { data: users, error } = await supabase
       .from('admin_users')
@@ -103,7 +103,7 @@ router.get('/users', authorizeRole(['admin']), async (req, res) => {
 });
 
 // Create new admin user (admin only)
-router.post('/users', authorizeRole(['admin']), async (req, res) => {
+router.post('/users', async (req, res) => {
   try {
     const { email, name, password, role = 'editor' } = req.body;
 
@@ -148,7 +148,7 @@ router.post('/users', authorizeRole(['admin']), async (req, res) => {
 });
 
 // Update admin user (admin only)
-router.put('/users/:id', authorizeRole(['admin']), async (req, res) => {
+router.put('/users/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const { email, name, role, is_active } = req.body;
@@ -196,7 +196,7 @@ router.put('/users/:id', authorizeRole(['admin']), async (req, res) => {
 });
 
 // Delete admin user (admin only)
-router.delete('/users/:id', authorizeRole(['admin']), async (req, res) => {
+router.delete('/users/:id', async (req, res) => {
   try {
     const { id } = req.params;
 

@@ -11,7 +11,6 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-min-32-characters'
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';
 const MAX_ATTEMPTS = parseInt(process.env.ADMIN_LOGIN_MAX_ATTEMPTS) || 5;
 const BLOCK_TIME = parseInt(process.env.ADMIN_LOGIN_BLOCK_TIME) || 15; // minutes
-const ADMIN_MASTER_PASSWORD = process.env.ADMIN_MASTER_PASSWORD || '';
 
 // Rate limiting for login attempts
 const loginLimiter = rateLimit({
@@ -143,7 +142,6 @@ router.post('/login', loginLimiter, loginValidation, async (req, res) => {
 const registerValidation = [
   body('email').isEmail().normalizeEmail().withMessage('Email inválido'),
   body('password').isLength({ min: 6 }).withMessage('Senha deve ter pelo menos 6 caracteres'),
-  body('masterPassword').isString().withMessage('Senha mestre é obrigatória'),
   body('name').optional().isString(),
   body('role').optional().isString(),
 ];
@@ -159,11 +157,7 @@ router.post('/register', registerValidation, async (req, res) => {
       });
     }
 
-    const { email, password, masterPassword, name = 'Administrador', role = 'admin' } = req.body;
-
-    if (!ADMIN_MASTER_PASSWORD || masterPassword !== ADMIN_MASTER_PASSWORD) {
-      return res.status(403).json({ error: 'Senha mestre inválida' });
-    }
+    const { email, password, name = 'Administrador', role = 'admin' } = req.body;
 
     const { data: existing } = await supabase
       .from('admin_users')

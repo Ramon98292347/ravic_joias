@@ -1,7 +1,7 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
 const supabase = require('../config/supabase');
-const { authenticateToken, authorizeRole } = require('../middleware/auth');
+const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -120,7 +120,7 @@ const productValidation = [
 ];
 
 // Create new product
-router.post('/', authorizeRole(['admin', 'editor']), productValidation, async (req, res) => {
+router.post('/', productValidation, async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -198,7 +198,7 @@ router.post('/', authorizeRole(['admin', 'editor']), productValidation, async (r
 });
 
 // Update product
-router.put('/:id', authorizeRole(['admin', 'editor']), productValidation, async (req, res) => {
+router.put('/:id', productValidation, async (req, res) => {
   try {
     const { id } = req.params;
     const errors = validationResult(req);
@@ -261,7 +261,7 @@ router.put('/:id', authorizeRole(['admin', 'editor']), productValidation, async 
 });
 
 // Delete product (admin only)
-router.delete('/:id', authorizeRole(['admin']), async (req, res) => {
+router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
 

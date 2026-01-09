@@ -31,6 +31,7 @@ const orderRoutes = require('./routes/orders');
 const publicRoutes = require('./routes/public');
 const settingsRoutes = require('./routes/settings');
 const uploadRoutes = require('./routes/upload');
+const webhookRoutes = require('./routes/webhook');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -41,7 +42,8 @@ const allowedOrigins = [
   process.env.FRONTEND_URL,
   'http://localhost:8080',
   'http://localhost:8081',
-  'http://localhost:8082'
+  'http://localhost:8082',
+  'http://localhost:8282'
 ].filter(Boolean);
 app.use(cors({ origin: allowedOrigins, credentials: true }));
 
@@ -68,6 +70,7 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/public', publicRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/webhook', webhookRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

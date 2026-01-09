@@ -27,12 +27,19 @@ const ProductCarousel = () => {
     const loadProducts = async () => {
       try {
         const items = await fetchCarouselItemsPublic();
-        const products = items
-          .map((it) => it.product)
-          .filter(Boolean) as any[];
-        setProducts(products);
+        let next = items.map((it) => it.product).filter(Boolean) as any[];
+        if (!Array.isArray(next) || next.length === 0) {
+          const { products: alt } = await fetchProducts({ page: 1, limit: 10, featured: true });
+          next = Array.isArray(alt) ? alt : [];
+        }
+        setProducts(next);
       } catch (error) {
-        setProducts([]);
+        try {
+          const { products: alt } = await fetchProducts({ page: 1, limit: 10, isNew: true });
+          setProducts(Array.isArray(alt) ? alt : []);
+        } catch {
+          setProducts([]);
+        }
       } finally {
         setLoading(false);
       }
@@ -94,7 +101,7 @@ const ProductCarousel = () => {
   }
 
   if (products.length === 0) {
-    return null; // Não mostra nada se não houver produtos
+    return null;
   }
 
   return (
