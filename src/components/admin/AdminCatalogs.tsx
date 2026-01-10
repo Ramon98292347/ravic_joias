@@ -3,6 +3,8 @@ import { Plus, Edit, Trash2, Image } from "lucide-react";
 import AdminLayout from "./AdminLayout";
 import { fetchCategories } from "@/services/publicData";
 import { adminData } from "@/services/adminData";
+import { adminAuth } from "@/services/adminAuth";
+import { supabase } from "@/lib/supabase";
 
 interface Category {
   id: string;
@@ -100,6 +102,48 @@ const AdminCatalogs: React.FC = () => {
     setShowModal(false);
     setEditingCategory(null);
     resetForm();
+  };
+
+  const parseSupabasePublicUrl = (url: string) => {
+    try {
+      const u = new URL(url);
+      const marker = "/storage/v1/object/public/";
+      const idx = u.pathname.indexOf(marker);
+      if (idx === -1) return null;
+      const rest = u.pathname.slice(idx + marker.length);
+      const [bucket, ...pathParts] = rest.split("/");
+      const path = pathParts.join("/");
+      if (!bucket || !path) return null;
+      return { bucket, path };
+    } catch {
+      return null;
+    }
+  };
+
+  const handleImageUpload = async (file: File) => {
+    try {
+      const user = await adminAuth.getCurrentUser();
+      if (!user) {
+        alert("Faça login para enviar imagem");
+        return;
+      }
+      const bucket = import.meta.env.VITE_STORAGE_BUCKET || "public-assets";
+
+      // Remove imagem anterior do storage se for URL pública do Supabase
+      if (editingCategory?.image_url) {
+        const info = parseSupabasePublicUrl(editingCategory.image_url);
+        if (info) {
+          await supabase.storage.from(info.bucket).remove([info.path]);
+        }
+      }
+
+      const folder = `categories/${formData.slug || Date.now()}`;
+      const path = `${folder}/${Date.now()}-${file.name}`;
+      const { publicUrl } = await adminData.uploadToStorage(bucket, path, file);
+      setFormData({ ...formData, image_url: publicUrl });
+    } catch (e) {
+      alert("Erro ao enviar imagem do catálogo");
+    }
   };
 
   if (loading) {
@@ -243,6 +287,10 @@ const AdminCatalogs: React.FC = () => {
                     className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
                     placeholder="https://exemplo.com/imagem.jpg"
                   />
+                  <div className="mt-2">
+                    <input type="file" accept="image/*" onChange={(e) => e.target.files && handleImageUpload(e.target.files[0])} />
+                    <p className="text-xs text-slate-400 mt-2">Ao selecionar arquivo, a imagem atual será substituída.</p>
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-2">Ordem</label>
