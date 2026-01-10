@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import OptimizedImage from "@/components/OptimizedImage";
@@ -30,6 +30,9 @@ const CollectionsCarousel = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [items, setItems] = useState<SlideItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isHovered, setIsHovered] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
+  const sectionRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -98,9 +101,21 @@ const CollectionsCarousel = () => {
   };
 
   useEffect(() => {
+    const el = sectionRef.current;
+    if (el) {
+      const obs = new IntersectionObserver((entries) => {
+        setIsVisible(entries[0]?.isIntersecting ?? true);
+      }, { threshold: 0.2 });
+      obs.observe(el);
+      return () => obs.disconnect();
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isHovered || !isVisible) return;
     const timer = setInterval(nextSlide, 4000);
     return () => clearInterval(timer);
-  }, [nextSlide]);
+  }, [isHovered, isVisible, nextSlide]);
 
   if (loading) {
     return (
@@ -126,7 +141,7 @@ const CollectionsCarousel = () => {
   if (items.length === 0) return null;
 
   return (
-    <section className="py-16 md:py-20">
+    <section className="py-16 md:py-20" ref={sectionRef}>
       <div className="container">
         <div className="flex items-end justify-between mb-10">
           <div>
@@ -149,7 +164,11 @@ const CollectionsCarousel = () => {
           </div>
         </div>
 
-        <div className="overflow-hidden">
+        <div
+          className="overflow-hidden"
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+        >
           <div
             className="flex transition-transform duration-500 ease-out"
             style={{ transform: `translateX(-${currentIndex * (100 / itemsPerView)}%)` }}
