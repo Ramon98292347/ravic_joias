@@ -25,9 +25,9 @@ const Garantia = () => {
               <div className="prose prose-lg mx-auto text-muted">
                 <p>Alianças de Ouro 18k possuem garantia eterna do teor do ouro.</p>
                 <p>Alianças de Prata 925 possuem garantia eterna do teor da prata.</p>
+                <p>Alianças de moeda não possuem garantia, podendo escurecer com o tempo.</p>
                 <p>Pedrinhas não possuem garantia contra quebras ou pedras soltas.</p>
                 <p>A garantia não cobre perdas ou quebras da peça.</p>
-                <p>Alianças de moda não possuem garantia, podendo escurecer com o tempo.</p>
               </div>
             </div>
           </section>
