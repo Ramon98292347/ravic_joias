@@ -224,7 +224,7 @@ const AdminSettings: React.FC = () => {
                   name="instagram_url"
                   value={settings.instagram_url}
                   onChange={handleInputChange}
-                  placeholder="https://instagram.com/petrleo"
+                  placeholder="https://www.instagram.com/ravicjoias"
                   className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-400"
                 />
               </div>

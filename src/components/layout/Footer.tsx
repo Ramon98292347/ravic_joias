@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Instagram, Facebook, Youtube, Phone, Mail, MapPin } from "lucide-react";
+import { Instagram, Facebook, Phone, Mail, MapPin } from "lucide-react";
 
 const Footer = () => {
   return (
@@ -22,7 +22,7 @@ const Footer = () => {
             </p>
             <div className="flex items-center gap-3 xs:gap-4">
               <a
-                href="https://instagram.com"
+                href="https://www.instagram.com/ravicjoias?igsh=MTV6MzNveGRjNHRyZQ%3D%3D&utm_source=qr"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="h-8 w-8 xs:h-10 xs:w-10 rounded-full border border-border flex items-center justify-center text-muted hover:text-primary hover:border-primary transition-colors"
@@ -37,14 +37,7 @@ const Footer = () => {
               >
                 <Facebook className="h-4 w-4 xs:h-5 xs:w-5" />
               </a>
-              <a
-                href="https://youtube.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="h-8 w-8 xs:h-10 xs:w-10 rounded-full border border-border flex items-center justify-center text-muted hover:text-primary hover:border-primary transition-colors"
-              >
-                <Youtube className="h-4 w-4 xs:h-5 xs:w-5" />
-              </a>
+
             </div>
           </div>
 
