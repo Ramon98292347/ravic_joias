@@ -51,11 +51,18 @@ const Footer = () => {
           {/* Institutional */}
           <div>
             <h3 className="font-serif text-base xs:text-lg text-foreground mb-4 xs:mb-5 sm:mb-6">Institucional</h3>
-            <ul className="space-y-3">
+            <ul className="space-y-2 list-disc list-inside">
               <li>
-                <Link to="/sobre" className="text-sm text-muted hover:text-primary transition-colors">
-                  Sobre a Ravic
-                </Link>
+                <a href="/sobre" target="_blank" rel="noopener noreferrer" className="text-sm text-muted hover:text-primary transition-colors">Sobre a Ravic</a>
+              </li>
+              <li>
+                <a href="/gravacao-a-laser" target="_blank" rel="noopener noreferrer" className="text-sm text-muted hover:text-primary transition-colors">Gravação a Laser</a>
+              </li>
+              <li>
+                <a href="/garantia" target="_blank" rel="noopener noreferrer" className="text-sm text-muted hover:text-primary transition-colors">Garantia</a>
+              </li>
+              <li>
+                <a href="/trocas" target="_blank" rel="noopener noreferrer" className="text-sm text-muted hover:text-primary transition-colors">Trocas</a>
               </li>
             </ul>
           </div>

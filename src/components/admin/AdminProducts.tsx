@@ -25,6 +25,21 @@ const AdminProducts: React.FC = () => {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [categories, setCategories] = useState<any[]>([]);
+  const [showModal, setShowModal] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<any | null>(null);
+  const [formData, setFormData] = useState<any>({
+    name: '',
+    description: '',
+    category_id: '',
+    collection_id: '',
+    material: '',
+    price: '',
+    promotional_price: '',
+    stock: '',
+    is_active: true,
+    is_featured: false,
+    is_new: false,
+  });
 
   useEffect(() => {
     loadProducts();
@@ -78,6 +93,80 @@ const AdminProducts: React.FC = () => {
   const getPrimaryImage = (product: Product) => {
     const primary = product.images?.find((img) => img?.is_primary) || product.images?.[0];
     return primary?.url || '/placeholder.svg';
+  };
+
+  const openEditModal = async (product: Product) => {
+    try {
+      const full = await adminData.getProduct(product.id);
+      setEditingProduct(full);
+      setFormData({
+        name: full.name || '',
+        description: full.description || '',
+        category_id: full.category_id || '',
+        collection_id: full.collection_id || '',
+        material: full.material || '',
+        price: (full.price ?? '').toString(),
+        promotional_price: (full.promotional_price ?? '').toString(),
+        stock: (full.stock ?? '').toString(),
+        is_active: !!full.is_active,
+        is_featured: !!full.is_featured,
+        is_new: !!full.is_new,
+      });
+      setShowModal(true);
+    } catch (e) {
+      alert('Erro ao carregar produto para edição');
+    }
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    setEditingProduct(null);
+    setFormData({
+      name: '',
+      description: '',
+      category_id: '',
+      collection_id: '',
+      material: '',
+      price: '',
+      promotional_price: '',
+      stock: '',
+      is_active: true,
+      is_featured: false,
+      is_new: false,
+    });
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value, type } = e.target;
+    const checked = (e.target as HTMLInputElement).checked;
+    setFormData((prev: any) => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value,
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingProduct) return;
+    try {
+      await adminData.upsertProduct(editingProduct.id, {
+        name: formData.name,
+        description: formData.description,
+        category_id: formData.category_id || null,
+        collection_id: formData.collection_id || null,
+        material: formData.material,
+        price: parseFloat(formData.price || '0'),
+        promotional_price: formData.promotional_price ? parseFloat(formData.promotional_price) : null,
+        stock: parseInt(formData.stock || '0'),
+        is_active: !!formData.is_active,
+        is_featured: !!formData.is_featured,
+        is_new: !!formData.is_new,
+      });
+      closeModal();
+      loadProducts();
+    } catch (e) {
+      alert('Erro ao salvar produto');
+    }
   };
 
   return (
@@ -143,7 +232,7 @@ const AdminProducts: React.FC = () => {
           </div>
         </div>
 
-        <div className="md:hidden space-y-3">
+        <div className="sm:hidden space-y-3">
           {products.map((product) => (
             <div key={product.id} className="bg-slate-800 rounded-lg border border-slate-700 p-3">
               <div className="flex items-start gap-3">
@@ -188,12 +277,12 @@ const AdminProducts: React.FC = () => {
                     </div>
 
                     <div className="flex items-center gap-2 flex-shrink-0">
-                      <Link
-                        to={`/admin/products/${product.id}/edit`}
+                      <button
+                        onClick={() => openEditModal(product)}
                         className="px-2 py-1 rounded-md bg-slate-700 text-amber-300 text-xs font-medium hover:bg-slate-600 transition-colors"
                       >
                         Editar
-                      </Link>
+                      </button>
                       <button
                         onClick={() => handleDelete(product.id)}
                         className="px-2 py-1 rounded-md bg-slate-700 text-red-300 text-xs font-medium hover:bg-slate-600 transition-colors"
@@ -208,7 +297,7 @@ const AdminProducts: React.FC = () => {
           ))}
         </div>
 
-        <div className="hidden md:block bg-slate-800 rounded-lg border border-slate-700 overflow-hidden">
+        <div className="hidden sm:block bg-slate-800 rounded-lg border border-slate-700 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-slate-700">
@@ -295,9 +384,9 @@ const AdminProducts: React.FC = () => {
                     </td>
                     <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm font-medium">
                       <div className="flex items-center space-x-1 sm:space-x-2">
-                        <Link to={`/admin/products/${product.id}/edit`} className="text-amber-400 hover:text-amber-300">
+                        <button onClick={() => openEditModal(product)} className="text-amber-400 hover:text-amber-300">
                           ✏️
-                        </Link>
+                        </button>
                         <button onClick={() => handleDelete(product.id)} className="text-red-400 hover:text-red-300">
                           🗑️
                         </button>
@@ -316,6 +405,146 @@ const AdminProducts: React.FC = () => {
             </div>
           )}
         </div>
+
+        {showModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-slate-800 rounded-lg max-w-2xl w-full border border-slate-700">
+              <div className="flex justify-between items-center p-6 border-b border-slate-700">
+                <h2 className="text-xl font-bold text-white">Editar Produto</h2>
+                <button onClick={closeModal} className="text-slate-400 hover:text-white transition-colors">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">Nome *</label>
+                    <input
+                      type="text"
+                      name="name"
+                      value={formData.name}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">Categoria *</label>
+                    <select
+                      name="category_id"
+                      value={formData.category_id}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      required
+                    >
+                      <option value="">Selecione</option>
+                      {categories.map((category) => (
+                        <option key={category.id} value={category.id}>{category.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">Coleção</label>
+                    <select
+                      name="collection_id"
+                      value={formData.collection_id}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    >
+                      <option value="">Selecione</option>
+                      {/* coleção opcional, preenche via formulário avançado se necessário */}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">Material</label>
+                    <input
+                      type="text"
+                      name="material"
+                      value={formData.material}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">Preço *</label>
+                    <input
+                      type="number"
+                      name="price"
+                      value={formData.price}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      required
+                      step="0.01"
+                      min="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">Promoção</label>
+                    <input
+                      type="number"
+                      name="promotional_price"
+                      value={formData.promotional_price}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      step="0.01"
+                      min="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">Estoque *</label>
+                    <input
+                      type="number"
+                      name="stock"
+                      value={formData.stock}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      required
+                      min="0"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Descrição</label>
+                  <textarea
+                    name="description"
+                    value={formData.description}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    rows={3}
+                  />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <label className="flex items-center space-x-2">
+                    <input type="checkbox" name="is_active" checked={formData.is_active} onChange={handleInputChange} className="rounded border-slate-600 text-amber-400 focus:ring-amber-400" />
+                    <span className="text-slate-300">Ativo</span>
+                  </label>
+                  <label className="flex items-center space-x-2">
+                    <input type="checkbox" name="is_featured" checked={formData.is_featured} onChange={handleInputChange} className="rounded border-slate-600 text-amber-400 focus:ring-amber-400" />
+                    <span className="text-slate-300">Destaque</span>
+                  </label>
+                  <label className="flex items-center space-x-2">
+                    <input type="checkbox" name="is_new" checked={formData.is_new} onChange={handleInputChange} className="rounded border-slate-600 text-amber-400 focus:ring-amber-400" />
+                    <span className="text-slate-300">Novo</span>
+                  </label>
+                </div>
+                <div className="flex gap-3 pt-4">
+                  <button type="button" onClick={closeModal} className="flex-1 px-4 py-2 border border-slate-600 rounded-lg text-slate-300 hover:bg-slate-700 transition-colors">
+                    Cancelar
+                  </button>
+                  <button type="submit" className="flex-1 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-900 rounded-lg font-medium transition-colors">
+                    Atualizar
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
     </AdminLayout>
   );

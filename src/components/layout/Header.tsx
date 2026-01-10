@@ -82,6 +82,13 @@ const Header = () => {
               <span className="text-xs font-medium">Coleções</span>
             </Link>
             <Link
+              to="/catalogos"
+              className="flex flex-col items-center gap-1 px-3 py-2 text-muted hover:text-primary transition-colors"
+            >
+              <Grid3X3 className="h-5 w-5" />
+              <span className="text-xs font-medium">Catálogos</span>
+            </Link>
+            <Link
               to="/buscar"
               className="flex flex-col items-center gap-1 px-3 py-2 text-muted hover:text-primary transition-colors"
             >

@@ -217,7 +217,7 @@ const AdminUsers: React.FC = () => {
         </div>
       </div>
 
-      <div className="md:hidden space-y-3">
+      <div className="sm:hidden space-y-3">
         {users.map((user) => (
           <div key={user.id} className="bg-slate-800 rounded-lg border border-slate-700 p-3">
             <div className="flex items-start gap-3">
@@ -270,7 +270,7 @@ const AdminUsers: React.FC = () => {
         ))}
       </div>
 
-      <div className="hidden md:block bg-slate-800 rounded-lg border border-slate-700">
+      <div className="hidden sm:block bg-slate-800 rounded-lg border border-slate-700">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-slate-900">

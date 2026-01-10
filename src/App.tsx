@@ -9,6 +9,10 @@ import NotFound from "./pages/NotFound";
 import Categoria from "./pages/Categoria";
 import Categorias from "./pages/Categorias";
 import Sobre from "./pages/Sobre";
+import Institucional from "./pages/Institucional";
+import GravacaoLaser from "./pages/GravacaoLaser";
+import Garantia from "./pages/Garantia";
+import Trocas from "./pages/Trocas";
 import Contato from "./pages/Contato";
 import Buscar from "./pages/Buscar";
 import Carrinho from "./pages/Carrinho";
@@ -22,9 +26,11 @@ import AdminSettings from "./components/admin/AdminSettings";
 import AdminUsers from "./components/admin/AdminUsers";
 import AdminCategories from "./components/admin/AdminCategories";
 import AdminCollections from "./components/admin/AdminCollections";
+import AdminCatalogs from "./components/admin/AdminCatalogs";
 import AdminOrders from "./components/admin/AdminOrders";
 import AdminCoupons from "./components/admin/AdminCoupons";
 import Colecoes from "./pages/Colecoes";
+import Catalogos from "./pages/Catalogos";
 import Finalizar from "./pages/Finalizar";
 
 const queryClient = new QueryClient();
@@ -41,11 +47,16 @@ const App = () => (
             <Route path="/categoria/:slug" element={<Categoria />} />
             <Route path="/categorias" element={<Categorias />} />
             <Route path="/colecoes" element={<Colecoes />} />
+            <Route path="/catalogos" element={<Catalogos />} />
             <Route path="/produto/:id" element={<Produto />} />
             <Route path="/buscar" element={<Buscar />} />
             <Route path="/carrinho" element={<Carrinho />} />
             <Route path="/finalizar" element={<Finalizar />} />
             <Route path="/sobre" element={<Sobre />} />
+            <Route path="/institucional" element={<Institucional />} />
+            <Route path="/gravacao-a-laser" element={<GravacaoLaser />} />
+            <Route path="/garantia" element={<Garantia />} />
+            <Route path="/trocas" element={<Trocas />} />
             <Route path="/contato" element={<Contato />} />
             {/* Admin Routes */}
             <Route path="/admin/login" element={<AdminLogin />} />
@@ -56,6 +67,7 @@ const App = () => (
             <Route path="/admin/carousel" element={<AdminCarousel />} />
             <Route path="/admin/users" element={<AdminUsers />} />
             <Route path="/admin/collections" element={<AdminCollections />} />
+            <Route path="/admin/catalogos" element={<AdminCatalogs />} />
             <Route path="/admin/orders" element={<AdminOrders />} />
             <Route path="/admin/coupons" element={<AdminCoupons />} />
             <Route path="/admin/settings" element={<AdminSettings />} />
