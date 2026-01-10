@@ -48,7 +48,6 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
     { path: '/admin/catalogos', icon: '📚', label: 'Catálogos', mobileLabel: 'Catálogos' },
     { path: '/admin/carousel', icon: '🎞', label: 'Carrossel Novidades', mobileLabel: 'Carrossel' },
     { path: '/admin/users', icon: '👥', label: 'Usuários', mobileLabel: 'Usuários' },
-    { path: '/admin/settings', icon: '⚙', label: 'Configurações', mobileLabel: 'Ajustes' },
   ];
 
   if (loading) {
