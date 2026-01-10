@@ -13,12 +13,29 @@ export const adminData = {
   },
 
   async upsertProduct(id: string | null, payload: any) {
+    const sanitized: any = {
+      name: payload?.name,
+      description: payload?.description ?? null,
+      category_id: payload?.category_id ?? null,
+      collection_id: payload?.collection_id ?? null,
+      material: payload?.material ?? null,
+      price: typeof payload?.price === "number" ? payload.price : null,
+      promotional_price: payload?.promotional_price ?? null,
+      stock: typeof payload?.stock === "number" ? payload.stock : null,
+      tags: Array.isArray(payload?.tags) ? payload.tags : [],
+      is_active: !!payload?.is_active,
+      is_featured: !!payload?.is_featured,
+      is_new: !!payload?.is_new,
+      updated_at: new Date().toISOString(),
+    };
+
     if (id) {
-      const { error } = await supabase.from("products").update(payload).eq("id", id);
+      const { error } = await supabase.from("products").update(sanitized).eq("id", id);
       if (error) throw new Error(error.message);
       return id;
     }
-    const { data, error } = await supabase.from("products").insert(payload).select("id").single();
+    const insertRow = { ...sanitized, created_at: new Date().toISOString() };
+    const { data, error } = await supabase.from("products").insert(insertRow).select("id").single();
     if (error) throw new Error(error.message);
     return data?.id;
   },
