@@ -40,6 +40,7 @@ const AdminProducts: React.FC = () => {
     is_featured: false,
     is_new: false,
   });
+  const [newImageFile, setNewImageFile] = useState<File | null>(null);
 
   useEffect(() => {
     loadProducts();
@@ -162,6 +163,23 @@ const AdminProducts: React.FC = () => {
         is_featured: !!formData.is_featured,
         is_new: !!formData.is_new,
       });
+
+      if (newImageFile) {
+        const productId = editingProduct.id as string;
+        const bucket = import.meta.env.VITE_STORAGE_BUCKET || 'product-images';
+        const folder = editingProduct?.collection_id ? `collections/${editingProduct.collection_id}` : `products/${productId}`;
+        await adminData.deleteAllProductImagesByProduct(productId);
+        const path = `${folder}/${Date.now()}-${newImageFile.name}`;
+        const { publicUrl, storagePath } = await adminData.uploadToStorage(bucket, path, newImageFile);
+        await adminData.addProductImage(productId, {
+          url: publicUrl,
+          alt_text: newImageFile.name,
+          is_primary: true,
+          sort_order: 0,
+          bucket_name: bucket,
+          storage_path: storagePath,
+        });
+      }
       closeModal();
       loadProducts();
     } catch (e) {
@@ -533,18 +551,28 @@ const AdminProducts: React.FC = () => {
                     <span className="text-slate-300">Novo</span>
                   </label>
                 </div>
-                <div className="flex gap-3 pt-4">
-                  <button type="button" onClick={closeModal} className="flex-1 px-4 py-2 border border-slate-600 rounded-lg text-slate-300 hover:bg-slate-700 transition-colors">
-                    Cancelar
-                  </button>
-                  <button type="submit" className="flex-1 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-900 rounded-lg font-medium transition-colors">
-                    Atualizar
-                  </button>
-                </div>
-              </form>
-            </div>
+              <div className="flex gap-3 pt-4">
+                <button type="button" onClick={closeModal} className="flex-1 px-4 py-2 border border-slate-600 rounded-lg text-slate-300 hover:bg-slate-700 transition-colors">
+                  Cancelar
+                </button>
+                <button type="submit" className="flex-1 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-900 rounded-lg font-medium transition-colors">
+                  Atualizar
+                </button>
+              </div>
+              <div className="pt-4">
+                <label className="block text-sm font-medium text-slate-300 mb-2">Imagem do Produto (opcional)</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setNewImageFile(e.target.files?.[0] || null)}
+                  className="block w-full text-sm text-slate-300 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-amber-500 file:text-slate-900 hover:file:bg-amber-600"
+                />
+                <p className="text-xs text-slate-400 mt-2">Se selecionar um arquivo, a imagem atual será substituída no storage e na tabela.</p>
+              </div>
+            </form>
           </div>
-        )}
+        </div>
+      )}
       </div>
     </AdminLayout>
   );
