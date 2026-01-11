@@ -61,7 +61,7 @@ const AdminProductForm: React.FC = () => {
 
   const loadCategories = async () => {
     try {
-      const response = await fetchCategories();
+      const response = await fetchCategories({ includeInactive: true });
       setCategories(response || []);
     } catch (error) {
       console.error('Error loading categories:', error);
@@ -70,7 +70,7 @@ const AdminProductForm: React.FC = () => {
 
   const loadCollections = async () => {
     try {
-      const response = await fetchCollections();
+      const response = await fetchCollections({ includeInactive: true });
       setCollections(response || []);
     } catch (error) {
       console.error('Error loading collections:', error);

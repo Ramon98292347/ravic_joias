@@ -58,8 +58,9 @@ export type Collection = {
   sort_order?: number | null;
 };
 
-export const fetchCollections = async (): Promise<Collection[]> => {
-  const ck = "collections";
+export const fetchCollections = async (opts?: { includeInactive?: boolean }): Promise<Collection[]> => {
+  const includeInactive = opts?.includeInactive === true;
+  const ck = `collections:${includeInactive ? "all" : "active"}`;
   const cached = __get(ck);
   if (cached) return cached as Collection[];
   const { data, error } = await supabase
@@ -68,13 +69,14 @@ export const fetchCollections = async (): Promise<Collection[]> => {
     .order("sort_order", { ascending: true })
     .order("name", { ascending: true });
   if (error) return [];
-  const rows = (data || []).filter((c: any) => c.is_active !== false);
+  const rows = includeInactive ? (data || []) : (data || []).filter((c: any) => c.is_active !== false);
   __set(ck, rows);
   return rows;
 };
 
-export const fetchCategories = async (): Promise<Category[]> => {
-  const ck = "categories";
+export const fetchCategories = async (opts?: { includeInactive?: boolean }): Promise<Category[]> => {
+  const includeInactive = opts?.includeInactive === true;
+  const ck = `categories:${includeInactive ? "all" : "active"}`;
   const cached = __get(ck);
   if (cached) return cached as Category[];
   const { data, error } = await supabase
@@ -83,7 +85,7 @@ export const fetchCategories = async (): Promise<Category[]> => {
     .order("sort_order", { ascending: true })
     .order("name", { ascending: true });
   if (error) return [];
-  const rows = (data || []).filter((c: any) => c.is_active !== false);
+  const rows = includeInactive ? (data || []) : (data || []).filter((c: any) => c.is_active !== false);
   __set(ck, rows);
   return rows;
 };
@@ -96,19 +98,21 @@ export const fetchProducts = async (params: {
   search?: string;
   featured?: boolean;
   isNew?: boolean;
+  active?: boolean;
+  includeInactive?: boolean;
 }): Promise<{ products: Product[]; total: number }> => {
-  console.log('🔍 fetchProducts iniciado com params:', params);
-  const { page = 1, limit = 20, category, collection, search, featured, isNew } = params;
+  const { page = 1, limit = 20, category, collection, search, featured, isNew, active, includeInactive } = params;
   const offset = (page - 1) * limit;
 
   const tryQuery = async (selectClause: string) => {
-    console.log('📋 Tentando query com select:', selectClause.substring(0, 100) + '...');
     let query = supabase
       .from("products")
       .select(selectClause, { count: "exact" })
-      .eq("is_active", true)
       .range(offset, offset + limit - 1)
       .order("created_at", { ascending: false });
+
+    if (typeof active === "boolean") query = query.eq("is_active", active);
+    else if (!includeInactive) query = query.eq("is_active", true);
 
     if (category && category !== "all") query = query.eq("category_id", category);
     if (collection && collection !== "all") query = query.eq("collection_id", collection);
@@ -116,15 +120,9 @@ export const fetchProducts = async (params: {
     if (featured === true) query = query.eq("is_featured", true);
     if (isNew === true) query = query.eq("is_new", true);
 
-    const result = await query;
-    console.log('📊 Query resultado - Status:', result.status);
-    console.log('📊 Query resultado - Dados:', result.data?.length || 0, 'produtos');
-    console.log('📊 Query resultado - Total:', result.count);
-    console.log('📊 Query resultado - Erro:', result.error);
-    
-    return result;
+    return await query;
   };
-  const ck = `products:${page}:${limit}:${category || ''}:${collection || ''}:${search || ''}:${featured ? '1' : '0'}:${isNew ? '1' : '0'}`;
+  const ck = `products:${page}:${limit}:${category || ""}:${collection || ""}:${search || ""}:${featured ? "1" : "0"}:${isNew ? "1" : "0"}:${typeof active === "boolean" ? (active ? "a1" : "a0") : "an"}:${includeInactive ? "i1" : "i0"}`;
   const cached = __get(ck);
   if (cached) return cached as { products: Product[]; total: number };
   const selectClause = `*,category:categories(id,name,slug,description),collection:coleções(id,name,slug,description),images:imagens_do_produto(id,url,alt_text,sort_order,is_primary,storage_path,bucket_name)`;

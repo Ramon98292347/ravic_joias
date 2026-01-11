@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import AdminLayout from './AdminLayout';
-import { fetchProducts, fetchCategories } from '@/services/publicData';
+import { fetchProducts, fetchCategories, fetchCollections } from '@/services/publicData';
 import { adminData } from '@/services/adminData';
 import OptimizedImage from '@/components/OptimizedImage';
 
@@ -23,8 +23,10 @@ const AdminProducts: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
+  const [collectionFilter, setCollectionFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [categories, setCategories] = useState<any[]>([]);
+  const [collections, setCollections] = useState<any[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any | null>(null);
   const [formData, setFormData] = useState<any>({
@@ -46,7 +48,8 @@ const AdminProducts: React.FC = () => {
   useEffect(() => {
     loadProducts();
     loadCategories();
-  }, [searchTerm, categoryFilter, statusFilter]);
+    loadCollections();
+  }, [searchTerm, categoryFilter, collectionFilter, statusFilter]);
 
   const loadProducts = async () => {
     try {
@@ -54,8 +57,11 @@ const AdminProducts: React.FC = () => {
       const params: any = {
         search: searchTerm || undefined,
         category: categoryFilter !== 'all' ? categoryFilter : undefined,
+        collection: collectionFilter !== 'all' ? collectionFilter : undefined,
         featured: statusFilter === 'featured' ? true : undefined,
         isNew: statusFilter === 'new' ? true : undefined,
+        active: statusFilter === 'active' ? true : statusFilter === 'inactive' ? false : undefined,
+        includeInactive: true,
       };
       const { products } = await fetchProducts({ page: 1, limit: 200, ...params });
       setProducts(products || []);
@@ -68,10 +74,19 @@ const AdminProducts: React.FC = () => {
 
   const loadCategories = async () => {
     try {
-      const response = await fetchCategories();
+      const response = await fetchCategories({ includeInactive: true });
       setCategories(response || []);
     } catch (error) {
       console.error('Error loading categories:', error);
+    }
+  };
+
+  const loadCollections = async () => {
+    try {
+      const response = await fetchCollections({ includeInactive: true });
+      setCollections(response || []);
+    } catch (error) {
+      console.error('Error loading collections:', error);
     }
   };
 
@@ -99,7 +114,13 @@ const AdminProducts: React.FC = () => {
 
   const openEditModal = async (product: Product) => {
     try {
-      const full = await adminData.getProduct(product.id);
+      const [full, cats, cols] = await Promise.all([
+        adminData.getProduct(product.id),
+        categories.length ? Promise.resolve(categories) : fetchCategories({ includeInactive: true }),
+        collections.length ? Promise.resolve(collections) : fetchCollections({ includeInactive: true }),
+      ]);
+      if (categories.length === 0) setCategories((cats as any[]) || []);
+      if (collections.length === 0) setCollections((cols as any[]) || []);
       setEditingProduct(full);
       setFormData({
         name: full.name || '',
@@ -242,6 +263,21 @@ const AdminProducts: React.FC = () => {
                 {categories.map((category) => (
                   <option key={category.id} value={category.id}>
                     {category.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">Coleção</label>
+              <select
+                value={collectionFilter}
+                onChange={(e) => setCollectionFilter(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-400"
+              >
+                <option value="all">Todas as Coleções</option>
+                {collections.map((collection) => (
+                  <option key={collection.id} value={collection.id}>
+                    {collection.name}
                   </option>
                 ))}
               </select>
@@ -487,7 +523,9 @@ const AdminProducts: React.FC = () => {
                       className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
                     >
                       <option value="">Selecione</option>
-                      {/* coleção opcional, preenche via formulário avançado se necessário */}
+                      {collections.map((collection) => (
+                        <option key={collection.id} value={collection.id}>{collection.name}</option>
+                      ))}
                     </select>
                   </div>
                   <div>
