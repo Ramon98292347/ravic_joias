@@ -13,6 +13,7 @@ type OrderRow = {
   total_amount: number;
   order_status: string;
   payment_status: string;
+  payment_method?: string;
   created_at: string;
   __table: OrderTable;
 };
@@ -88,7 +89,7 @@ const AdminOrders: React.FC = () => {
         let q = supabase
           .from(table)
           .select(
-            "id,order_number,customer_name,customer_email,customer_phone,total_amount,order_status,payment_status,created_at"
+            "id,order_number,customer_name,customer_email,customer_phone,total_amount,order_status,payment_status,payment_method,created_at"
           )
           .order("created_at", { ascending: false });
 
