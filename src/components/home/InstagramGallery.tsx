@@ -21,7 +21,7 @@ const InstagramGallery = () => {
       <div className="container">
         <div className="text-center mb-10">
           <a
-            href="https://instagram.com/ravicjoias"
+            href="https://www.instagram.com/ravicjoias?igsh=MTV6MzNveGRjNHRyZQ%3D%3D&utm_source=qr"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 text-primary hover:text-primary/80 transition-colors"
@@ -38,7 +38,7 @@ const InstagramGallery = () => {
           {images.map((image, index) => (
             <a
               key={index}
-              href="https://instagram.com/ravicjoias"
+              href="https://www.instagram.com/ravicjoias?igsh=MTV6MzNveGRjNHRyZQ%3D%3D&utm_source=qr"
               target="_blank"
               rel="noopener noreferrer"
               className="group relative aspect-square overflow-hidden"

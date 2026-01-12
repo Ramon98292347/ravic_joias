@@ -12,7 +12,7 @@ console.log('🔑 Senha: admin123');
 console.log('👤 Nome: Administrador');
 console.log('🎭 Role: admin');
 console.log('');
-console.log('🌐 Acesse: http://localhost:8080/admin/login');
+console.log('🌐 Acesse: http://localhost:3000/admin/login');
 console.log('');
 console.log('📋 INSTRUÇÕES PARA SUPABASE:');
 console.log('1. Acesse o dashboard do Supabase');

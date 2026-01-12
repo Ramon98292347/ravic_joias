@@ -1,0 +1,107 @@
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
+import { fetchCategories } from "@/services/publicData";
+import OptimizedImage from "@/components/OptimizedImage";
+
+interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  image_url?: string | null;
+  cover_image_url?: string | null;
+  is_active?: boolean;
+  sort_order?: number;
+}
+
+const Catalogos = () => {
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const data = await fetchCategories();
+        setCategories(Array.isArray(data) ? data : []);
+      } catch {
+        setCategories([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="container py-8">
+        <div className="flex items-center justify-between mb-8">
+          <Link to="/">
+            <Button variant="ghost" className="flex items-center gap-2">
+              <ArrowLeft className="h-4 w-4" />
+              Voltar
+            </Button>
+          </Link>
+          <h1 className="text-3xl font-serif">Catálogos</h1>
+          <div></div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {Array.from({ length: 6 }).map((_, idx) => (
+            <div key={idx} className="bg-secondary/30 rounded-lg p-6 text-center animate-pulse">
+              <div className="h-6 bg-secondary/50 rounded mb-2"></div>
+              <div className="h-4 bg-secondary/50 rounded mb-4"></div>
+              <div className="h-10 bg-secondary/50 rounded"></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="container py-8">
+      <div className="flex items-center justify-between mb-8">
+        <Link to="/">
+          <Button variant="ghost" className="flex items-center gap-2">
+            <ArrowLeft className="h-4 w-4" />
+            Voltar
+          </Button>
+        </Link>
+        <h1 className="text-3xl font-serif">Catálogos</h1>
+        <div></div>
+      </div>
+      {categories.length === 0 ? (
+        <div className="text-center py-12">
+          <p className="text-muted">Nenhuma categoria encontrada.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {categories.map((category) => (
+            <div key={category.slug} className="bg-secondary/30 rounded-lg overflow-hidden hover:bg-secondary/50 transition-colors">
+              <div className="aspect-video bg-secondary/40">
+                <OptimizedImage
+                  src={category.image_url || "/placeholder.svg"}
+                  alt={category.name}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="p-6 text-center">
+                <h3 className="text-xl font-semibold mb-2">{category.name}</h3>
+                <p className="text-muted mb-4">{category.description || "Sem descrição"}</p>
+                <Link to={`/categoria/${category.slug}`}>
+                  <Button variant="outline" className="border-primary text-primary hover:bg-primary hover:text-primary-foreground">
+                    Ver Produtos
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default Catalogos;

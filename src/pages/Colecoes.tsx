@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { fetchCollections } from "@/services/publicData";
+import OptimizedImage from "@/components/OptimizedImage";
 
 interface Collection {
   id: string;
@@ -78,14 +79,23 @@ const Colecoes = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {collections.map((collection) => (
-            <div key={collection.slug} className="bg-secondary/30 rounded-lg p-6 text-center hover:bg-secondary/50 transition-colors">
-              <h3 className="text-xl font-semibold mb-2">{collection.name}</h3>
-              <p className="text-muted mb-4">{collection.description || "Sem descrição"}</p>
-              <Link to={`/categoria/${collection.slug}`}>
-                <Button variant="outline" className="border-primary text-primary hover:bg-primary hover:text-primary-foreground">
-                  Ver Produtos
-                </Button>
-              </Link>
+            <div key={collection.slug} className="bg-secondary/30 rounded-lg overflow-hidden hover:bg-secondary/50 transition-colors">
+              <div className="aspect-video bg-secondary/40">
+                <OptimizedImage
+                  src={collection.image_url || "/placeholder.svg"}
+                  alt={collection.name}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="p-6 text-center">
+                <h3 className="text-xl font-semibold mb-2">{collection.name}</h3>
+                <p className="text-muted mb-4">{collection.description || "Sem descrição"}</p>
+                <Link to={`/categoria/${collection.slug}`}>
+                  <Button variant="outline" className="border-primary text-primary hover:bg-primary hover:text-primary-foreground">
+                    Ver Produtos
+                  </Button>
+                </Link>
+              </div>
             </div>
           ))}
         </div>

@@ -1,5 +1,6 @@
-import { Link } from "react-router-dom";
-import { Heart, ShoppingBag } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { ShoppingBag } from "lucide-react";
+import { cartService } from "@/services/cart";
 import OptimizedImage from "@/components/OptimizedImage";
 
 interface ProductCardProps {
@@ -23,11 +24,24 @@ const ProductCard = ({
   isNew,
   isBestseller,
 }: ProductCardProps) => {
+  const navigate = useNavigate();
+
   const formatPrice = (value: number) => {
     return value.toLocaleString("pt-BR", {
       style: "currency",
       currency: "BRL",
     });
+  };
+
+  const handleAddToCart = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    try {
+      await cartService.addItem(id, 1, price);
+      navigate("/carrinho");
+    } catch (error) {
+      console.error("Erro ao adicionar ao carrinho:", error);
+      alert("Erro ao adicionar ao carrinho. Tente novamente.");
+    }
   };
 
   const discount = originalPrice ? Math.round(((originalPrice - price) / originalPrice) * 100) : 0;
@@ -61,23 +75,9 @@ const ProductCard = ({
           )}
         </div>
 
-        {/* Wishlist Button */}
-        <button
-          className="absolute top-3 right-3 h-9 w-9 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-background"
-          onClick={(e) => {
-            e.preventDefault();
-            // Add to wishlist logic
-          }}
-        >
-          <Heart className="h-4 w-4 text-foreground" />
-        </button>
-
         {/* Quick Add Button */}
         <button
-          onClick={(e) => {
-            e.preventDefault();
-            // Add to cart logic
-          }}
+          onClick={handleAddToCart}
           className="absolute top-2 xs:top-3 sm:top-4 right-2 xs:right-3 sm:right-4 z-10 bg-background/95 backdrop-blur-sm text-foreground p-1.5 xs:p-2 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-primary hover:text-primary-foreground"
           aria-label="Adicionar ao carrinho"
         >

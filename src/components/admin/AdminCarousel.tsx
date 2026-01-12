@@ -44,7 +44,9 @@ const AdminCarousel: React.FC = () => {
     try {
       const cols = await fetchCollections();
       setCollections(cols || []);
-    } catch {}
+    } catch {
+      setCollections([]);
+    }
   };
 
   const loadCarouselItems = async () => {
@@ -52,7 +54,7 @@ const AdminCarousel: React.FC = () => {
       const rows = await adminData.listCarouselItems();
       // Enriquecer com dados do produto
       const ids = rows.map((r: any) => r.product_id).filter(Boolean);
-      let products: Record<string, Product> = {};
+      const products: Record<string, Product> = {};
       if (ids.length > 0) {
         const { products: found } = await fetchProducts({ page: 1, limit: 200 });
         for (const p of found) {
@@ -287,8 +289,8 @@ const AdminCarousel: React.FC = () => {
                     <div className="flex items-center space-x-3 sm:space-x-4">
                       <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg overflow-hidden flex-shrink-0">
                         <img
-                          src={getPrimaryImage(item.product)}
-                          alt={item.product.name}
+                          src={getPrimaryImage(item.product || ({} as any)) || '/placeholder-product.jpg'}
+                          alt={item.product?.name || 'Produto'}
                           className="w-full h-full object-cover"
                           onError={(e) => {
                             e.currentTarget.src = '/placeholder-product.jpg';
@@ -296,14 +298,14 @@ const AdminCarousel: React.FC = () => {
                         />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <h4 className="text-white font-medium text-sm sm:text-base truncate">{item.product.name}</h4>
+                        <h4 className="text-white font-medium text-sm sm:text-base truncate">{item.product?.name || 'Produto'}</h4>
                         <p className="text-slate-400 text-xs sm:text-sm">
-                          {formatCurrency(item.product.promotional_price || item.product.price)}
+                          {formatCurrency((item.product?.promotional_price ?? item.product?.price ?? 0))}
                         </p>
                       </div>
                     </div>
                     
-                    <div className="flex items-center justify-between lg:justify-end space-x-2 sm:space-x-3">
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-3 lg:justify-end">
                       <button
                         onClick={() => handleToggleActive(index)}
                         className={`px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
@@ -315,7 +317,7 @@ const AdminCarousel: React.FC = () => {
                         {item.is_active ? 'Ativo' : 'Inativo'}
                       </button>
                       
-                      <div className="flex space-x-1">
+                      <div className="flex items-center gap-1">
                         <button
                           onClick={() => handleReorder(index, index - 1)}
                           disabled={index === 0}

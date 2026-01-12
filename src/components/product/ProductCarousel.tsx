@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import ProductCard from "./ProductCard";
-import { fetchCarouselItemsPublic } from "@/services/publicData";
+import { fetchCarouselItemsPublic, fetchProducts } from "@/services/publicData";
 
 interface Product {
   id: string;
@@ -22,24 +22,50 @@ const ProductCarousel = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Carrega produtos da API
   useEffect(() => {
-    const loadProducts = async () => {
+    let cancelled = false;
+
+    const load = async () => {
       try {
         const items = await fetchCarouselItemsPublic();
-        const products = items
-          .map((it) => it.product)
-          .filter(Boolean) as any[];
-        setProducts(products);
-      } catch (error) {
-        setProducts([]);
+        const fromCarousel = items.map((it) => it.product).filter(Boolean) as Product[];
+
+        let next: Product[] = Array.isArray(fromCarousel) ? fromCarousel : [];
+
+        if (next.length === 0) {
+          const { products: featured } = await fetchProducts({ page: 1, limit: 10, featured: true });
+          next = Array.isArray(featured) ? (featured as Product[]) : [];
+        }
+
+        if (next.length === 0) {
+          const { products: isNew } = await fetchProducts({ page: 1, limit: 10, isNew: true });
+          next = Array.isArray(isNew) ? (isNew as Product[]) : [];
+        }
+
+        if (!cancelled) {
+          setProducts(next);
+        }
+      } catch {
+        if (!cancelled) setProducts([]);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
-    loadProducts();
+    setLoading(true);
+    load();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
+
+  useEffect(() => {
+    const maxIndex = Math.max(0, products.length - Math.floor(itemsPerView));
+    if (currentIndex > maxIndex) {
+      setCurrentIndex(0);
+    }
+  }, [currentIndex, itemsPerView, products.length]);
 
   // Atualiza quantidade de itens por view baseado no tamanho da tela
   useEffect(() => {
@@ -94,7 +120,7 @@ const ProductCarousel = () => {
   }
 
   if (products.length === 0) {
-    return null; // Não mostra nada se não houver produtos
+    return null;
   }
 
   return (

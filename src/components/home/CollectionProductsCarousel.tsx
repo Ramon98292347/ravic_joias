@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useRef } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import ProductCard from "@/components/product/ProductCard";
@@ -26,6 +26,9 @@ const CollectionProductsCarousel = ({ collection }: { collection: CollectionInfo
   const [itemsPerView, setItemsPerView] = useState(4);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isHovered, setIsHovered] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
+  const sectionRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     const loadProducts = async () => {
@@ -55,18 +58,30 @@ const CollectionProductsCarousel = ({ collection }: { collection: CollectionInfo
 
   const maxIndex = Math.max(0, products.length - Math.floor(itemsPerView));
 
-  const nextSlide = useCallback(() => {
+  const nextSlide = () => {
     setCurrentIndex((prev) => (prev >= maxIndex ? 0 : prev + 1));
-  }, [maxIndex]);
+  };
 
   const prevSlide = () => {
     setCurrentIndex((prev) => (prev <= 0 ? maxIndex : prev - 1));
   };
 
   useEffect(() => {
+    const el = sectionRef.current;
+    if (el) {
+      const obs = new IntersectionObserver((entries) => {
+        setIsVisible(entries[0]?.isIntersecting ?? true);
+      }, { threshold: 0.2 });
+      obs.observe(el);
+      return () => obs.disconnect();
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isHovered || !isVisible) return;
     const timer = setInterval(nextSlide, 4000);
     return () => clearInterval(timer);
-  }, [nextSlide]);
+  }, [isHovered, isVisible, maxIndex]);
 
   if (loading) {
     return (
@@ -91,7 +106,7 @@ const CollectionProductsCarousel = ({ collection }: { collection: CollectionInfo
   if (products.length === 0) return null;
 
   return (
-    <section className="py-8">
+    <section className="py-8" ref={sectionRef}>
       <div className="container">
         <div className="flex items-end justify-between mb-6">
           <div>
@@ -101,8 +116,8 @@ const CollectionProductsCarousel = ({ collection }: { collection: CollectionInfo
         </div>
         <div
           className="overflow-hidden"
-          onMouseEnter={() => {}}
-          onMouseLeave={() => {}}
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
         >
           <div
             className="flex transition-transform duration-500 ease-out"
@@ -142,6 +157,17 @@ const CollectionProductsCarousel = ({ collection }: { collection: CollectionInfo
             >
               <ChevronRight className="h-4 w-4" />
             </button>
+          </div>
+          <div className="hidden md:flex items-center justify-center gap-2">
+            {Array.from({ length: maxIndex + 1 }).map((_, index) => (
+              <button
+                key={index}
+                onClick={() => setCurrentIndex(index)}
+                className={`h-2 rounded-full transition-all duration-300 ${
+                  index === currentIndex ? "w-8 bg-primary" : "w-2 bg-border hover:bg-muted"
+                }`}
+              />
+            ))}
           </div>
         </div>
       </div>

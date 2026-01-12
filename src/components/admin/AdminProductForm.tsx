@@ -25,6 +25,17 @@ const AdminProductForm: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const isEditing = !!id;
+  const adminProductFormDebugEnabled = !!import.meta.env.DEV;
+
+  const adminProductFormLog = (level: "debug" | "info" | "warn" | "error", message: string, data?: unknown) => {
+    if (!adminProductFormDebugEnabled) return;
+    const prefix = "[AdminProductForm]";
+    if (data === undefined) {
+      console[level](`${prefix} ${message}`);
+      return;
+    }
+    console[level](`${prefix} ${message}`, data);
+  };
 
   const [formData, setFormData] = useState<ProductForm>({
     name: '',
@@ -48,6 +59,7 @@ const AdminProductForm: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const [tagInput, setTagInput] = useState('');
   const [existingImages, setExistingImages] = useState<any[]>([]);
+  const [successMessage, setSuccessMessage] = useState('');
   const collectionSlug = collections.find((c) => c.id === formData.collection_id)?.slug || '';
 
   useEffect(() => {
@@ -60,19 +72,19 @@ const AdminProductForm: React.FC = () => {
 
   const loadCategories = async () => {
     try {
-      const response = await fetchCategories();
+      const response = await fetchCategories({ includeInactive: true });
       setCategories(response || []);
     } catch (error) {
-      console.error('Error loading categories:', error);
+      console.error('Erro ao carregar categorias:', error);
     }
   };
 
   const loadCollections = async () => {
     try {
-      const response = await fetchCollections();
+      const response = await fetchCollections({ includeInactive: true });
       setCollections(response || []);
     } catch (error) {
-      console.error('Error loading collections:', error);
+      console.error('Erro ao carregar coleções:', error);
     }
   };
 
@@ -102,7 +114,7 @@ const AdminProductForm: React.FC = () => {
         images: [],
       });
     } catch (error) {
-      console.error('Error loading product:', error);
+      console.error('Erro ao carregar produto:', error);
     } finally {
       setLoading(false);
     }
@@ -158,38 +170,121 @@ const AdminProductForm: React.FC = () => {
     setSubmitting(true);
 
     try {
-      const productData = {
-        ...formData,
+      const opId = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      const productPayload = {
+        name: formData.name,
+        description: formData.description,
+        category_id: formData.category_id,
+        collection_id: formData.collection_id || null,
+        material: formData.material,
         price: parseFloat(formData.price),
         promotional_price: formData.promotional_price ? parseFloat(formData.promotional_price) : null,
         stock: parseInt(formData.stock),
+        tags: formData.tags || [],
+        is_active: formData.is_active,
+        is_featured: formData.is_featured,
+        is_new: formData.is_new,
       };
 
-      const newId = await adminData.upsertProduct(isEditing ? id! : null, productData);
+      adminProductFormLog("info", "salvar:start", {
+        opId,
+        isEditing,
+        id: isEditing ? id : null,
+        hasImages: formData.images.length > 0,
+        imagesCount: formData.images.length,
+        category_id: formData.category_id,
+        collection_id: formData.collection_id || null,
+      });
 
-      // Upload images if any
-      if (!isEditing && formData.images.length > 0) {
+      const upsertPendingLog = window.setTimeout(() => {
+        adminProductFormLog("warn", "salvar:upsert:pendente", { opId, waitedMs: 15000 });
+      }, 15000);
+      let newId: string;
+      try {
+        newId = await adminData.upsertProduct(isEditing ? id! : null, productPayload);
+      } finally {
+        window.clearTimeout(upsertPendingLog);
+      }
+      adminProductFormLog("info", "salvar:upsert:ok", { opId, productId: isEditing ? id : newId });
+
+      // Upload/Substituição de imagens (se houver arquivos anexados)
+      if (formData.images.length > 0) {
         const bucket = import.meta.env.VITE_STORAGE_BUCKET || 'product-images';
-        const productId = newId as string;
+        const productId = (isEditing ? id! : (newId as string));
+        adminProductFormLog("info", "salvar:imagens:start", {
+          opId,
+          productId,
+          bucket,
+          count: formData.images.length,
+        });
+
+        if (isEditing) {
+          const deletePendingLog = window.setTimeout(() => {
+            adminProductFormLog("warn", "salvar:imagens:deleteAll:pendente", { opId, productId, waitedMs: 15000 });
+          }, 15000);
+          try {
+            await adminData.deleteAllProductImagesByProduct(productId);
+          } finally {
+            window.clearTimeout(deletePendingLog);
+          }
+          adminProductFormLog("info", "salvar:imagens:deleteAll:ok", { opId, productId });
+        }
         for (let i = 0; i < formData.images.length; i++) {
           const file = formData.images[i];
           const folder = (collections.find((c) => c.id === formData.collection_id)?.slug) || `products/${productId}`;
           const path = `${folder}/${Date.now()}-${file.name}`;
-          const { publicUrl, storagePath } = await adminData.uploadToStorage(bucket, path, file);
-          await adminData.addProductImage(productId, {
-            url: publicUrl,
-            alt_text: file.name,
-            is_primary: i === 0,
-            sort_order: i,
-            bucket_name: bucket,
-            storage_path: storagePath,
+          adminProductFormLog("debug", "salvar:imagens:arquivo", {
+            opId,
+            productId,
+            index: i,
+            fileName: file.name,
+            fileSize: file.size,
+            fileType: file.type,
+            path,
           });
+
+          const uploadPendingLog = window.setTimeout(() => {
+            adminProductFormLog("warn", "salvar:imagens:upload:pendente", { opId, productId, waitedMs: 15000, path });
+          }, 15000);
+          let uploaded: { publicUrl: string; storagePath: string };
+          try {
+            uploaded = await adminData.uploadToStorage(bucket, path, file);
+          } finally {
+            window.clearTimeout(uploadPendingLog);
+          }
+          const { publicUrl, storagePath } = uploaded;
+
+          const addPendingLog = window.setTimeout(() => {
+            adminProductFormLog("warn", "salvar:imagens:add:pendente", { opId, productId, waitedMs: 15000 });
+          }, 15000);
+          try {
+            await adminData.addProductImage(productId, {
+              url: publicUrl,
+              alt_text: file.name,
+              is_primary: i === 0,
+              sort_order: i,
+              bucket_name: bucket,
+              storage_path: storagePath,
+            });
+          } finally {
+            window.clearTimeout(addPendingLog);
+          }
+          adminProductFormLog("debug", "salvar:imagens:add:ok", { opId, productId, index: i, storagePath });
         }
+        adminProductFormLog("info", "salvar:imagens:ok", { opId, productId });
       }
 
-      navigate('/admin/products');
+      // Mostrar mensagem de sucesso e recarregar a página
+      const message = isEditing ? 'Produto atualizado com sucesso!' : 'Produto criado com sucesso!';
+      setSuccessMessage(message);
+      
+      // Aguardar um momento para a mensagem ser vista e então navegar
+      setTimeout(() => {
+        navigate('/admin/products');
+      }, 800);
+      
     } catch (error) {
-      console.error('Error saving product:', error);
+      console.error('[AdminProductForm] Erro ao salvar produto:', error);
       alert('Erro ao salvar produto. Tente novamente.');
     } finally {
       setSubmitting(false);
@@ -209,6 +304,12 @@ const AdminProductForm: React.FC = () => {
   return (
     <AdminLayout title={isEditing ? 'Editar Produto' : 'Novo Produto'}>
       <div className="max-w-4xl mx-auto">
+        {/* Mensagem de sucesso */}
+        {successMessage && (
+          <div className="mb-4 p-4 bg-green-600 border border-green-500 rounded-lg text-white">
+            {successMessage}
+          </div>
+        )}
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Basic Information */}
           <div className="bg-slate-800 rounded-lg p-6 border border-slate-700">

@@ -5,6 +5,7 @@ export type CustomerInfo = {
   name: string;
   email: string;
   phone: string;
+  paymentMethod: string;
 };
 
 type OrderInsert = {
@@ -15,6 +16,7 @@ type OrderInsert = {
   total_amount: number;
   payment_status?: string;
   order_status?: string;
+  payment_method?: string;
   notes?: string | null;
 };
 
@@ -34,7 +36,7 @@ export const checkoutService = {
   async finalizeOrder(customer: CustomerInfo): Promise<{ order_id: string; order_number: string }> {
     const items: CartItem[] = await cartService.listItems();
     const total = items.reduce((sum, it) => sum + (it.total_price || 0), 0);
-    const orderNumber = `RAV-${Date.now()}`;
+    const orderNumber = `RAV-${crypto.randomUUID()}`;
 
     const orderPayload: OrderInsert = {
       order_number: orderNumber,
@@ -44,6 +46,7 @@ export const checkoutService = {
       total_amount: Number(total.toFixed(2)),
       payment_status: "pending",
       order_status: "pending",
+      payment_method: customer.paymentMethod,
       notes: null,
     };
 
@@ -66,7 +69,12 @@ export const checkoutService = {
       subtotal: it.total_price,
     }));
 
-    await tryInsertOrderItems("itens_do_pedido", orderItemsPayload);
+    try {
+      await tryInsertOrderItems("itens_do_pedido", orderItemsPayload);
+    } catch (e) {
+      await supabase.from("pedidos").delete().eq("id", orderId);
+      throw e;
+    }
 
     const payload = {
       order_id: orderId,
@@ -76,6 +84,7 @@ export const checkoutService = {
         name: customer.name,
         email: customer.email,
         phone: customer.phone,
+        paymentMethod: customer.paymentMethod,
       },
       items: items.map((it) => ({
         product_id: it.product_id,

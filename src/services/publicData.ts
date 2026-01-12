@@ -1,4 +1,25 @@
 import { supabase } from "@/lib/supabase";
+const __cache: Record<string, { ts: number; data: any }> = {};
+const __ttl = 5 * 60 * 1000;
+const publicDataDebugEnabled = !!import.meta.env.DEV;
+const publicDataLog = (level: "debug" | "info" | "warn" | "error", message: string, data?: unknown) => {
+  if (!publicDataDebugEnabled) return;
+  const prefix = "[publicData]";
+  if (data === undefined) {
+    console[level](`${prefix} ${message}`);
+    return;
+  }
+  console[level](`${prefix} ${message}`, data);
+};
+const __get = (k: string) => {
+  const v = __cache[k];
+  if (!v) return null;
+  if (Date.now() - v.ts > __ttl) return null;
+  return v.data;
+};
+const __set = (k: string, data: any) => {
+  __cache[k] = { ts: Date.now(), data };
+};
 
 export type ProductImage = {
   id?: string;
@@ -47,24 +68,36 @@ export type Collection = {
   sort_order?: number | null;
 };
 
-export const fetchCollections = async (): Promise<Collection[]> => {
+export const fetchCollections = async (opts?: { includeInactive?: boolean }): Promise<Collection[]> => {
+  const includeInactive = opts?.includeInactive === true;
+  const ck = `collections:${includeInactive ? "all" : "active"}`;
+  const cached = __get(ck);
+  if (cached) return cached as Collection[];
   const { data, error } = await supabase
     .from("coleções")
     .select("id,name,slug,description,image_url,banner_url,is_active,sort_order")
     .order("sort_order", { ascending: true })
     .order("name", { ascending: true });
   if (error) return [];
-  return (data || []).filter((c: any) => c.is_active !== false);
+  const rows = includeInactive ? (data || []) : (data || []).filter((c: any) => c.is_active !== false);
+  __set(ck, rows);
+  return rows;
 };
 
-export const fetchCategories = async (): Promise<Category[]> => {
+export const fetchCategories = async (opts?: { includeInactive?: boolean }): Promise<Category[]> => {
+  const includeInactive = opts?.includeInactive === true;
+  const ck = `categories:${includeInactive ? "all" : "active"}`;
+  const cached = __get(ck);
+  if (cached) return cached as Category[];
   const { data, error } = await supabase
     .from("categories")
     .select("id,name,slug,description,image_url,is_active,sort_order")
     .order("sort_order", { ascending: true })
     .order("name", { ascending: true });
   if (error) return [];
-  return (data || []).filter((c: any) => c.is_active !== false);
+  const rows = includeInactive ? (data || []) : (data || []).filter((c: any) => c.is_active !== false);
+  __set(ck, rows);
+  return rows;
 };
 
 export const fetchProducts = async (params: {
@@ -75,32 +108,66 @@ export const fetchProducts = async (params: {
   search?: string;
   featured?: boolean;
   isNew?: boolean;
-}): Promise<{ products: Product[]; total: number }> => {
-  const { page = 1, limit = 20, category, collection, search, featured, isNew } = params;
+  active?: boolean;
+  includeInactive?: boolean;
+}, opts?: { signal?: AbortSignal }): Promise<{ products: Product[]; total: number }> => {
+  const { page = 1, limit = 20, category, collection, search, featured, isNew, active, includeInactive } = params;
   const offset = (page - 1) * limit;
 
-  let query = supabase
-    .from("products")
-    .select(
-      `*,
-      category:categories(id,name,slug,description),
-      collection:coleções(id,name,slug,description),
-      images:imagens_do_produto(id,url,alt_text,sort_order,is_primary,storage_path,bucket_name)`,
-      { count: "exact" }
-    )
-    .eq("is_active", true)
-    .range(offset, offset + limit - 1)
-    .order("created_at", { ascending: false });
+  const tryQuery = async (selectClause: string) => {
+    let query = supabase
+      .from("products")
+      .select(selectClause, { count: "exact" })
+      .range(offset, offset + limit - 1)
+      .order("created_at", { ascending: false });
 
-  if (category && category !== "all") query = query.eq("category_id", category);
-  if (collection && collection !== "all") query = query.eq("collection_id", collection);
-  if (search) query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%`);
-  if (featured === true) query = query.eq("is_featured", true);
-  if (isNew === true) query = query.eq("is_new", true);
+    if (typeof active === "boolean") query = query.eq("is_active", active);
+    else if (!includeInactive) query = query.eq("is_active", true);
 
-  const { data, error, count } = await query;
-  if (error) return { products: [], total: 0 };
-  return { products: (data as any) || [], total: count || 0 };
+    if (category && category !== "all") query = query.eq("category_id", category);
+    if (collection && collection !== "all") query = query.eq("collection_id", collection);
+    if (search) query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%`);
+    if (featured === true) query = query.eq("is_featured", true);
+    if (isNew === true) query = query.eq("is_new", true);
+
+    return await query;
+  };
+  const ck = `products:${page}:${limit}:${category || ""}:${collection || ""}:${search || ""}:${featured ? "1" : "0"}:${isNew ? "1" : "0"}:${typeof active === "boolean" ? (active ? "a1" : "a0") : "an"}:${includeInactive ? "i1" : "i0"}`;
+  const cached = __get(ck);
+  if (cached) return cached as { products: Product[]; total: number };
+  const selectClause = `*,category:categories(id,name,slug,description),collection:coleções(id,name,slug,description),images:imagens_do_produto(id,url,alt_text,sort_order,is_primary,storage_path,bucket_name)`;
+  const opId = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  publicDataLog("debug", "fetchProducts:start", { opId, page, limit, offset, ck });
+  const pendingLog = window.setTimeout(() => {
+    publicDataLog("warn", "fetchProducts:pendente", { opId, waitedMs: 15000, page, limit, offset });
+  }, 15000);
+  try {
+    const supabasePromise = tryQuery(selectClause);
+    const abortPromise = new Promise<never>((_, reject) => {
+      if (opts?.signal) {
+        if (opts.signal.aborted) {
+          reject(new DOMException("The operation was aborted.", "AbortError"));
+        } else {
+          opts.signal.addEventListener("abort", () => reject(new DOMException("The operation was aborted.", "AbortError")), { once: true });
+        }
+      }
+    });
+
+    const { data, error, count } = await Promise.race([supabasePromise, abortPromise]);
+    if (error) {
+      publicDataLog("error", "fetchProducts:error", { opId, message: error.message, details: error.details, hint: error.hint, code: error.code });
+      return { products: [], total: 0 };
+    }
+    const result = { products: (data as any) || [], total: count || 0 };
+    __set(ck, result);
+    publicDataLog("debug", "fetchProducts:ok", { opId, total: result.total, count: result.products.length });
+    return result;
+  } catch (error: any) {
+    publicDataLog("error", "fetchProducts:exception", { opId, name: error?.name, message: error?.message });
+    return { products: [], total: 0 };
+  } finally {
+    window.clearTimeout(pendingLog);
+  }
 };
 
 export type CarouselItem = {
@@ -120,24 +187,18 @@ export type CarouselItem = {
 };
 
 export const fetchCarouselItemsPublic = async (): Promise<CarouselItem[]> => {
-  const now = new Date().toISOString();
-  let query = supabase
+  const ck = "carousel:public";
+  const cached = __get(ck);
+  if (cached) return cached as CarouselItem[];
+  const selectClause = `id,product_id,title,subtitle,description,image_url,link_url,button_text,sort_order,is_active,start_date,end_date,product:products(id,name,price,promotional_price,images:imagens_do_produto(id,url,is_primary,sort_order))`;
+  const res = await supabase
     .from("itens_do_carrossel")
-    .select(
-      `id,product_id,title,subtitle,description,image_url,link_url,button_text,sort_order,is_active,start_date,end_date,
-       product:products(id,name,price,promotional_price,
-         images:imagens_do_produto(id,url,is_primary,sort_order))`
-    )
+    .select(selectClause)
     .eq("is_active", true)
-    .lte("start_date", now)
     .order("sort_order", { ascending: true });
-
-  const { data, error } = await query;
-  if (error) return [];
-  const rows = (data || []) as any[];
-  // Optionally filter out expired
-  const filtered = rows.filter((r) => !r.end_date || new Date(r.end_date) >= new Date());
-  return filtered.map((r) => ({
+  if (res.error) return [];
+  const rows = (res.data || []) as any[];
+  return rows.map((r) => ({
     id: r.id,
     product_id: r.product_id,
     title: r.title,
@@ -155,16 +216,17 @@ export const fetchCarouselItemsPublic = async (): Promise<CarouselItem[]> => {
 };
 
 export const fetchProductById = async (id: string): Promise<Product | null> => {
-  const { data, error } = await supabase
-    .from("products")
-    .select(
-      `id,name,description,price,promotional_price,material,stock,is_active,is_new,is_featured,sizes,
-       category:categories(id,name,slug,description),
-       collection:coleções(id,name,slug,description),
-       images:imagens_do_produto(id,url,alt_text,is_primary,sort_order)`
-    )
-    .eq("id", id)
-    .single();
-  if (error) return null;
-  return (data as any) as Product;
+  const attempts: string[] = [
+    `id,name,description,price,promotional_price,material,stock,is_active,is_new,is_featured,sizes,category:categories(id,name,slug,description),collection:coleções(id,name,slug,description),images:imagens_do_produto(id,url,alt_text,is_primary,sort_order)`,
+    `id,name,description,price,promotional_price,material,stock,is_active,is_new,is_featured,sizes,category:categories(id,name,slug,description),collection:coleções(id,name,slug,description),images:product_images(id,url,alt_text,is_primary,sort_order)`,
+    `id,name,description,price,promotional_price,material,stock,is_active,is_new,is_featured,sizes,category:categories(id,name,slug,description),collection:collections(id,name,slug,description),images:product_images(id,url,alt_text,is_primary,sort_order)`,
+    `id,name,description,price,promotional_price,material,stock,is_active,is_new,is_featured,sizes,category:categories(id,name,slug,description)`
+  ];
+
+  for (const selectClause of attempts) {
+    const { data, error } = await supabase.from("products").select(selectClause).eq("id", id).single();
+    if (!error) return (data as any) as Product;
+  }
+
+  return null;
 };

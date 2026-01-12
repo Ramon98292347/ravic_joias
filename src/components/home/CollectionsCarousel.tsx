@@ -1,8 +1,8 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import OptimizedImage from "@/components/OptimizedImage";
-import { getApiBaseUrl } from "@/lib/api";
+import { supabase } from "@/lib/supabase";
 
 interface Collection {
   id: string;
@@ -30,22 +30,35 @@ const CollectionsCarousel = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [items, setItems] = useState<SlideItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isHovered, setIsHovered] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
+  const sectionRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     const load = async () => {
       try {
-        const baseUrl = getApiBaseUrl();
-        const colRes = await fetch(`${baseUrl}/api/public/collections`);
-        if (!colRes.ok) throw new Error("Erro ao buscar coleções");
-        const colJson = await colRes.json();
-        const collections: Collection[] = Array.isArray(colJson?.collections) ? colJson.collections.slice(0, 5) : [];
+        const { data: cols, error: colsErr } = await supabase
+          .from("coleções")
+          .select("id,name,slug")
+          .eq("is_active", true)
+          .order("sort_order", { ascending: true })
+          .order("name", { ascending: true })
+          .range(0, 4);
+        if (colsErr || !Array.isArray(cols)) throw colsErr || new Error("Falha coleções");
+        const collections: Collection[] = (cols as any[]) as Collection[];
 
-        const productImagesPerCollection = await Promise.all(
+        const perCollection = await Promise.all(
           collections.map(async (c) => {
-            const res = await fetch(`${baseUrl}/api/public/products?page=1&limit=10&collection=${encodeURIComponent(c.id)}`);
-            if (!res.ok) return [] as SlideItem[];
-            const data = await res.json();
-            const products: Product[] = Array.isArray(data?.products) ? data.products : [];
+            const { data: prods } = await supabase
+              .from("products")
+              .select(
+                "id,images:imagens_do_produto(id,url,is_primary,sort_order)"
+              )
+              .eq("is_active", true)
+              .eq("collection_id", c.id)
+              .order("created_at", { ascending: false })
+              .range(0, 9);
+            const products: Product[] = (prods as any[]) || [];
             const images: SlideItem[] = products
               .map((p) => p.images?.find((img) => img?.is_primary)?.url || p.images?.[0]?.url)
               .filter(Boolean)
@@ -55,8 +68,7 @@ const CollectionsCarousel = () => {
           })
         );
 
-        const flattened = productImagesPerCollection.flat();
-        setItems(flattened);
+        setItems(perCollection.flat());
       } catch {
         setItems([]);
       } finally {
@@ -89,9 +101,21 @@ const CollectionsCarousel = () => {
   };
 
   useEffect(() => {
+    const el = sectionRef.current;
+    if (el) {
+      const obs = new IntersectionObserver((entries) => {
+        setIsVisible(entries[0]?.isIntersecting ?? true);
+      }, { threshold: 0.2 });
+      obs.observe(el);
+      return () => obs.disconnect();
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isHovered || !isVisible) return;
     const timer = setInterval(nextSlide, 4000);
     return () => clearInterval(timer);
-  }, [nextSlide]);
+  }, [isHovered, isVisible, nextSlide]);
 
   if (loading) {
     return (
@@ -117,7 +141,7 @@ const CollectionsCarousel = () => {
   if (items.length === 0) return null;
 
   return (
-    <section className="py-16 md:py-20">
+    <section className="py-16 md:py-20" ref={sectionRef}>
       <div className="container">
         <div className="flex items-end justify-between mb-10">
           <div>
@@ -140,7 +164,11 @@ const CollectionsCarousel = () => {
           </div>
         </div>
 
-        <div className="overflow-hidden">
+        <div
+          className="overflow-hidden"
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+        >
           <div
             className="flex transition-transform duration-500 ease-out"
             style={{ transform: `translateX(-${currentIndex * (100 / itemsPerView)}%)` }}
@@ -183,4 +211,3 @@ const CollectionsCarousel = () => {
 };
 
 export default CollectionsCarousel;
-

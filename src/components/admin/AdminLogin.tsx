@@ -5,7 +5,6 @@ import { adminAuth } from '@/services/adminAuth';
 const AdminLogin: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [masterPassword, setMasterPassword] = useState('');
   const [isRegister, setIsRegister] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -113,25 +112,6 @@ const AdminLogin: React.FC = () => {
               />
             </div>
 
-            {isRegister && (
-              <div>
-                <label htmlFor="master" className="block text-sm font-medium text-slate-300 mb-2">
-                  Senha Mestre
-                </label>
-                <input
-                  id="master"
-                  type="password"
-                  value={masterPassword}
-                  onChange={(e) => setMasterPassword(e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition-all"
-                  placeholder="••••••••"
-                  autoComplete="off"
-                  required
-                  disabled={loading}
-                />
-              </div>
-            )}
-
             {error && (
               <div className="bg-red-500/20 border border-red-500/30 rounded-lg p-3">
                 <div className="flex items-center">
@@ -158,7 +138,7 @@ const AdminLogin: React.FC = () => {
                 setError('');
                 setLoading(true);
                 try {
-                  const data = await adminAuth.signUp(email, password, masterPassword);
+                  const data = await adminAuth.signUp(email, password);
                   if (data?.user) navigate('/admin/dashboard');
                 } catch (err: any) {
                   setError(err.message || 'Erro ao cadastrar');

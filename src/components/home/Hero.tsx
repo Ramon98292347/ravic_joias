@@ -40,7 +40,7 @@ const Hero = () => {
               Ver Coleção
               <ArrowRight className="h-3 w-3 xs:h-4 xs:w-4" />
             </Link>
-            <Link to="/loja" className="btn-outline-gold inline-flex items-center justify-center gap-2 text-xs xs:text-sm">
+            <Link to="/colecoes" className="btn-outline-gold inline-flex items-center justify-center gap-2 text-xs xs:text-sm">
               Explorar Loja
             </Link>
           </div>

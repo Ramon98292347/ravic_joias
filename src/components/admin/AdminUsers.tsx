@@ -217,28 +217,80 @@ const AdminUsers: React.FC = () => {
         </div>
       </div>
 
-      {/* Users Table */}
-      <div className="bg-slate-800 rounded-lg border border-slate-700">
+      <div className="sm:hidden space-y-3">
+        {users.map((user) => (
+          <div key={user.id} className="bg-slate-800 rounded-lg border border-slate-700 p-3">
+            <div className="flex items-start gap-3">
+              <div className="h-10 w-10 rounded-full bg-slate-700 flex items-center justify-center flex-shrink-0">
+                <User className="h-5 w-5 text-slate-400" />
+              </div>
+
+              <div className="min-w-0 flex-1">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium text-white truncate">{user.name}</div>
+                    <div className="text-xs text-slate-400 truncate mt-0.5">{user.email}</div>
+                    <div className="text-xs text-slate-500 mt-1">Criado em: {formatDate(user.created_at)}</div>
+                  </div>
+                  <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                    <span
+                      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                        user.role === 'admin' ? 'bg-red-500/20 text-red-400' : 'bg-blue-500/20 text-blue-400'
+                      }`}
+                    >
+                      {user.role === 'admin' ? 'Admin' : 'Editor'}
+                    </span>
+                    <span
+                      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                        user.is_active ? 'bg-green-500/20 text-green-400' : 'bg-gray-500/20 text-gray-400'
+                      }`}
+                    >
+                      {user.is_active ? 'Ativo' : 'Inativo'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="mt-3 flex items-center gap-2">
+                  <button
+                    onClick={() => handleEdit(user)}
+                    className="flex-1 px-3 py-2 rounded-lg bg-slate-700 text-amber-300 text-sm font-medium hover:bg-slate-600 transition-colors"
+                  >
+                    Editar
+                  </button>
+                  <button
+                    onClick={() => handleDelete(user.id)}
+                    className="flex-1 px-3 py-2 rounded-lg bg-slate-700 text-red-300 text-sm font-medium hover:bg-slate-600 transition-colors"
+                  >
+                    Excluir
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="hidden sm:block bg-slate-800 rounded-lg border border-slate-700">
         <div className="overflow-x-auto">
-          <table className="min-w-[600px] w-full">
+          <table className="w-full table-fixed">
             <thead className="bg-slate-900">
               <tr>
-                <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                <th className="w-48 md:w-56 lg:w-64 px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
                   Usuário
                 </th>
-                <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                <th className="w-24 sm:w-28 px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
                   Função
                 </th>
-                <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                <th className="w-28 sm:w-32 px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
                   Status
                 </th>
-                <th className="hidden md:table-cell px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                <th className="hidden md:table-cell md:w-40 lg:w-48 px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
                   Criado em
                 </th>
-                <th className="hidden lg:table-cell px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                <th className="hidden lg:table-cell lg:w-48 xl:w-56 px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
                   Último Login
                 </th>
-                <th className="px-3 sm:px-6 py-2 sm:py-3 text-right text-xs font-medium text-slate-400 uppercase tracking-wider">
+                <th className="w-28 sm:w-32 px-3 sm:px-6 py-2 sm:py-3 text-right text-xs font-medium text-slate-400 uppercase tracking-wider">
                   Ações
                 </th>
               </tr>
@@ -246,34 +298,34 @@ const AdminUsers: React.FC = () => {
             <tbody className="divide-y divide-slate-700">
               {users.map((user) => (
                 <tr key={user.id} className="hover:bg-slate-700/50 transition-colors">
-                  <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
+                  <td className="px-3 sm:px-6 py-3 sm:py-4">
                     <div className="flex items-center min-w-0">
                       <div className="flex-shrink-0 h-8 w-8 sm:h-10 sm:w-10">
                         <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-slate-700 flex items-center justify-center">
                           <User className="h-3 w-3 sm:h-5 sm:w-5 text-slate-400" />
                         </div>
                       </div>
-                      <div className="ml-2 sm:ml-4 min-w-0">
+                      <div className="ml-2 sm:ml-4 min-w-0 max-w-[200px] md:max-w-[240px] lg:max-w-[280px] xl:max-w-[320px]">
                         <div className="text-xs sm:text-sm font-medium text-white truncate">{user.name}</div>
                         <div className="text-xs sm:text-sm text-slate-400 truncate">{user.email}</div>
                       </div>
                     </div>
                   </td>
                   <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
-                    <span className={`inline-flex items-center px-2 py-0.5 sm:px-2.5 rounded-full text-xs font-medium ${
-                      user.role === 'admin' 
-                        ? 'bg-red-500/20 text-red-400' 
-                        : 'bg-blue-500/20 text-blue-400'
-                    }`}>
+                    <span
+                      className={`inline-flex items-center px-2 py-0.5 sm:px-2.5 rounded-full text-xs font-medium ${
+                        user.role === 'admin' ? 'bg-red-500/20 text-red-400' : 'bg-blue-500/20 text-blue-400'
+                      }`}
+                    >
                       {user.role === 'admin' ? 'Admin' : 'Editor'}
                     </span>
                   </td>
                   <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
-                    <span className={`inline-flex items-center px-2 py-0.5 sm:px-2.5 rounded-full text-xs font-medium ${
-                      user.is_active 
-                        ? 'bg-green-500/20 text-green-400' 
-                        : 'bg-gray-500/20 text-gray-400'
-                    }`}>
+                    <span
+                      className={`inline-flex items-center px-2 py-0.5 sm:px-2.5 rounded-full text-xs font-medium ${
+                        user.is_active ? 'bg-green-500/20 text-green-400' : 'bg-gray-500/20 text-gray-400'
+                      }`}
+                    >
                       {user.is_active ? 'Ativo' : 'Inativo'}
                     </span>
                   </td>

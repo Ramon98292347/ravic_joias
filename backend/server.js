@@ -1,10 +1,28 @@
-require('dotenv').config();
-require('dotenv').config({ path: '../.env' });
+const path = require('path');
+const dotenv = require('dotenv');
+const crypto = require('crypto');
+
+dotenv.config({ path: path.resolve(__dirname, '.env'), override: true });
+dotenv.config({ path: path.resolve(__dirname, '..', '.env'), override: true });
+
+const isProd = process.env.NODE_ENV === 'production';
+
+if (process.env.VITE_SUPABASE_URL && (!isProd || !process.env.SUPABASE_URL)) {
+  process.env.SUPABASE_URL = process.env.VITE_SUPABASE_URL;
+}
+
+if (process.env.VITE_SUPABASE_KEY && (!isProd || !process.env.SUPABASE_KEY)) {
+  process.env.SUPABASE_KEY = process.env.VITE_SUPABASE_KEY;
+}
+
+if (process.env.VITE_FRONTEND_URL && (!isProd || !process.env.FRONTEND_URL)) {
+  process.env.FRONTEND_URL = process.env.VITE_FRONTEND_URL;
+}
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
-const path = require('path');
+ 
 
 const authRoutes = require('./routes/auth');
 const adminRoutes = require('./routes/admin');
@@ -13,19 +31,30 @@ const orderRoutes = require('./routes/orders');
 const publicRoutes = require('./routes/public');
 const settingsRoutes = require('./routes/settings');
 const uploadRoutes = require('./routes/upload');
+const webhookRoutes = require('./routes/webhook');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Security middleware
 app.use(helmet());
-const allowedOrigins = [
-  process.env.FRONTEND_URL,
-  'http://localhost:8080',
-  'http://localhost:8081',
-  'http://localhost:8082'
-].filter(Boolean);
-app.use(cors({ origin: allowedOrigins, credentials: true }));
+const allowedOrigins = [process.env.FRONTEND_URL].filter(Boolean);
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    const isLocal =
+      origin.startsWith('http://localhost:') ||
+      origin.startsWith('http://127.0.0.1:');
+    if (isProd) {
+      const ok = allowedOrigins.includes(origin);
+      return callback(ok ? null : new Error('CORS'), ok);
+    }
+    const ok = isLocal || allowedOrigins.includes(origin);
+    return callback(ok ? null : new Error('CORS'), ok);
+  },
+  credentials: true,
+};
+app.use(cors(corsOptions));
 
 // Rate limiting
 const limiter = rateLimit({
@@ -50,6 +79,7 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/public', publicRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/webhook', webhookRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -78,6 +108,11 @@ app.listen(PORT, () => {
   console.log(`🚀 Servidor rodando na porta ${PORT}`);
   console.log(`📡 Ambiente: ${process.env.NODE_ENV}`);
   console.log(`🔐 Supabase URL: ${process.env.SUPABASE_URL ? 'Configurada' : 'Não configurada'}`);
+  if (process.env.NODE_ENV === 'development') {
+    const key = process.env.SUPABASE_KEY || '';
+    const hash = crypto.createHash('sha256').update(key).digest('hex').slice(0, 12);
+    console.log(`🔐 Supabase Key Hash: ${hash}`);
+  }
 });
 
 module.exports = app;

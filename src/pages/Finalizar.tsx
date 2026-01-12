@@ -12,6 +12,7 @@ const Finalizar = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,6 +32,7 @@ const Finalizar = () => {
     name.trim().length >= 2 &&
     /\S+@\S+\.\S+/.test(email) &&
     phone.trim().length >= 8 &&
+    paymentMethod.trim().length > 0 &&
     items.length > 0 &&
     !saving;
 
@@ -39,7 +41,7 @@ const Finalizar = () => {
     setSaving(true);
     setError(null);
     try {
-      await checkoutService.finalizeOrder({ name, email, phone });
+      await checkoutService.finalizeOrder({ name, email, phone, paymentMethod });
       navigate("/"); 
     } catch (e: any) {
       setError("Erro ao finalizar pedido. Tente novamente.");
@@ -121,6 +123,20 @@ const Finalizar = () => {
                     className="w-full border rounded px-3 py-2 bg-background text-foreground"
                     placeholder="(xx) xxxxx-xxxx"
                   />
+                </div>
+                <div>
+                  <label className="block text-sm text-muted mb-1">Forma de Pagamento</label>
+                  <select
+                    value={paymentMethod}
+                    onChange={(e) => setPaymentMethod(e.target.value)}
+                    className="w-full border rounded px-3 py-2 bg-background text-foreground"
+                  >
+                    <option value="">Selecione uma forma de pagamento</option>
+                    <option value="dinheiro">Dinheiro</option>
+                    <option value="pix">Pix</option>
+                    <option value="cartao_credito">Cartão de Crédito</option>
+                    <option value="cartao_debito">Cartão de Débito</option>
+                  </select>
                 </div>
               </div>
             </div>

@@ -8,6 +8,7 @@ const MobileBar = () => {
     { icon: Home, label: "Home", href: "/" },
     { icon: Search, label: "Buscar", href: "/buscar" },
     { icon: Grid3X3, label: "Coleções", href: "/colecoes" },
+    { icon: Grid3X3, label: "Catálogos", href: "/catalogos" },
     { icon: ShoppingBag, label: "Carrinho", href: "/carrinho" },
   ];
 

@@ -128,3 +128,21 @@ router.get('/test', (req, res) => {
 });
 
 module.exports = router;
+ 
+// Orçamento webhook
+router.post('/orcamento', async (req, res) => {
+  try {
+    const payload = req.body || {};
+    console.log('🧾 NOVO ORÇAMENTO RECEBIDO:', {
+      customer_name: payload.customer_name,
+      customer_email: payload.customer_email,
+      customer_phone: payload.customer_phone,
+      cart_items_count: Array.isArray(payload.cart_items) ? payload.cart_items.length : 0,
+      cart_total: payload.cart_total,
+    });
+    res.json({ success: true, message: 'Orçamento recebido com sucesso!' });
+  } catch (error) {
+    console.error('Erro no webhook de orçamento:', error);
+    res.status(500).json({ success: false, error: 'Erro interno do servidor' });
+  }
+});

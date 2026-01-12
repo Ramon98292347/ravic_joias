@@ -1,8 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import { adminData } from "@/services/adminData";
 
-const MASTER = import.meta.env.VITE_ADMIN_MASTER_PASSWORD || "";
-
 export const adminAuth = {
   signIn: async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
@@ -10,10 +8,7 @@ export const adminAuth = {
     return data;
   },
 
-  signUp: async (email: string, password: string, masterPassword: string) => {
-    if (!MASTER || masterPassword !== MASTER) {
-      throw new Error("Senha mestre inválida");
-    }
+  signUp: async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -25,8 +20,7 @@ export const adminAuth = {
     // Autentica imediatamente após cadastro
     const { data: login, error: loginErr } = await supabase.auth.signInWithPassword({ email, password });
     if (loginErr) throw new Error(loginErr.message);
-    // Sincroniza admin_users com o usuário atual
-    await adminData.ensureCurrentAdminUser();
+    // Removido: sincronização automática para evitar conflitos (409).
     return login;
   },
 

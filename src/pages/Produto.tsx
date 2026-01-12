@@ -1,7 +1,7 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useState, useEffect, useMemo } from "react";
 import { Helmet } from "react-helmet-async";
-import { ShoppingCart, Heart, Share2, ChevronLeft, ChevronRight, Star, Truck, Shield, Package } from "lucide-react";
+import { ShoppingCart, Share2, ChevronLeft, ChevronRight, Star, Truck, Shield, Package } from "lucide-react";
 import { cartService } from "@/services/cart";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
@@ -20,7 +20,6 @@ const Produto = () => {
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [selectedSize, setSelectedSize] = useState<number | null>(null);
-  const [isWishlisted, setIsWishlisted] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -75,20 +74,6 @@ const Produto = () => {
       navigate("/carrinho");
     } catch (e) {
       alert('Erro ao adicionar ao carrinho');
-    }
-  };
-
-  const handleShare = () => {
-    if (navigator.share) {
-      navigator.share({
-        title: product?.name,
-        text: `Confira este produto: ${product?.name}`,
-        url: window.location.href,
-      });
-    } else {
-      // Fallback - copy to clipboard
-      navigator.clipboard.writeText(window.location.href);
-      alert('Link copiado para a área de transferência!');
     }
   };
 
@@ -367,28 +352,6 @@ const Produto = () => {
                 <ShoppingCart className="h-5 w-5" />
                 Adicionar ao Carrinho
               </button>
-              
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setIsWishlisted(!isWishlisted)}
-                  className={`flex-1 py-3 border font-medium uppercase tracking-wider transition-colors flex items-center justify-center gap-2 ${
-                    isWishlisted
-                      ? 'border-destructive text-destructive hover:bg-destructive/10'
-                      : 'border-border hover:border-primary'
-                  }`}
-                >
-                  <Heart className={`h-4 w-4 ${isWishlisted ? 'fill-current' : ''}`} />
-                  {isWishlisted ? 'Remover' : 'Favoritar'}
-                </button>
-                
-                <button
-                  onClick={handleShare}
-                  className="flex-1 py-3 border border-border font-medium uppercase tracking-wider hover:border-primary transition-colors flex items-center justify-center gap-2"
-                >
-                  <Share2 className="h-4 w-4" />
-                  Compartilhar
-                </button>
-              </div>
             </div>
 
             {/* Benefits */}

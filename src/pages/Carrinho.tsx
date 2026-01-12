@@ -7,6 +7,7 @@ import { cartService, CartItem } from "@/services/cart";
 const Carrinho = () => {
   const [items, setItems] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -21,15 +22,29 @@ const Carrinho = () => {
   const subtotal = items.reduce((sum, it) => sum + (it.total_price || 0), 0);
 
   const updateQty = async (id: string, qty: number) => {
-    await cartService.updateQuantity(id, qty);
-    const data = await cartService.listItems();
-    setItems(data);
+    try {
+      setUpdatingId(id);
+      await cartService.updateQuantity(id, qty);
+      const data = await cartService.listItems();
+      setItems(data);
+    } catch (e) {
+      alert("Erro ao atualizar quantidade. Tente novamente.");
+    } finally {
+      setUpdatingId(null);
+    }
   };
 
   const remove = async (id: string) => {
-    await cartService.removeItem(id);
-    const data = await cartService.listItems();
-    setItems(data);
+    try {
+      setUpdatingId(id);
+      await cartService.removeItem(id);
+      const data = await cartService.listItems();
+      setItems(data);
+    } catch (e) {
+      alert("Erro ao remover item. Tente novamente.");
+    } finally {
+      setUpdatingId(null);
+    }
   };
 
   return (
@@ -79,12 +94,12 @@ const Carrinho = () => {
                     <p className="text-sm">R$ {it.unit_price.toFixed(2)}</p>
                   </div>
                   <div className="flex items-center gap-3">
-                    <button onClick={() => updateQty(it.id, Math.max(1, it.quantity - 1))} className="h-8 w-8 border rounded">-</button>
+                    <button disabled={updatingId === it.id} onClick={() => updateQty(it.id, Math.max(1, it.quantity - 1))} className="h-8 w-8 border rounded disabled:opacity-60 disabled:cursor-not-allowed">-</button>
                     <span className="w-10 text-center">{it.quantity}</span>
-                    <button onClick={() => updateQty(it.id, it.quantity + 1)} className="h-8 w-8 border rounded">+</button>
+                    <button disabled={updatingId === it.id} onClick={() => updateQty(it.id, it.quantity + 1)} className="h-8 w-8 border rounded disabled:opacity-60 disabled:cursor-not-allowed">+</button>
                   </div>
                   <div className="w-24 text-right font-medium">R$ {it.total_price.toFixed(2)}</div>
-                  <button onClick={() => remove(it.id)} className="text-red-500 hover:text-red-600">
+                  <button disabled={updatingId === it.id} onClick={() => remove(it.id)} className="text-red-500 hover:text-red-600 disabled:opacity-60 disabled:cursor-not-allowed">
                     <Trash2 className="h-5 w-5" />
                   </button>
                 </li>

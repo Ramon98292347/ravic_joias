@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { getApiBaseUrl } from "@/lib/api";
 import { ArrowRight, Phone, Mail } from "lucide-react";
 
 const Newsletter = () => {
@@ -20,29 +21,30 @@ const Newsletter = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/webhook/contato', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email,
-          telefone: telefone.replace(/\D/g, ''),
-          origem: 'newsletter',
-          timestamp: new Date().toISOString(),
-        }),
-      });
+      // Número do WhatsApp da Ravic
+      const phoneNumber = "5527997340566";
+      
+      // Criar mensagem formatada
+      const message = `🎯 *Nova Inscrição Newsletter Ravic Joias*\n\n` +
+        `📧 *Email:* ${email}\n` +
+        (telefone ? `📱 *WhatsApp:* ${telefone}\n` : '') +
+        `📅 *Data:* ${new Date().toLocaleString('pt-BR')}\n\n` +
+        `📝 *Origem:* Newsletter Site\n\n` +
+        `Entrar em contato com este cliente para enviar novidades e ofertas exclusivas!`;
 
-      if (!response.ok) {
-        throw new Error('Erro ao enviar dados');
-      }
+      // Abrir WhatsApp com a mensagem pré-preenchida
+      const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+      window.open(whatsappUrl, "_blank");
 
-      alert('Cadastro realizado com sucesso! Entraremos em contato em breve.');
+      // Aguardar um momento para o WhatsApp abrir
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      alert('Cadastro realizado com sucesso! Você será redirecionado para o WhatsApp da Ravic.');
       setEmail('');
       setTelefone('');
     } catch (error) {
       console.error('Erro:', error);
-      alert('Erro ao enviar cadastro. Por favor, tente novamente.');
+      alert('Erro ao processar cadastro. Por favor, tente novamente.');
     } finally {
       setIsLoading(false);
     }

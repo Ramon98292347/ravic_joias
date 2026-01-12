@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Image, AlertCircle } from 'lucide-react';
 import AdminLayout from './AdminLayout';
 import { fetchCollections } from '@/services/publicData';
+import { adminData } from '@/services/adminData';
+import { adminAuth } from '@/services/adminAuth';
 
 interface Collection {
   id: string;
@@ -20,6 +22,7 @@ const AdminCollections: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingCollection, setEditingCollection] = useState<Collection | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     slug: '',
@@ -29,6 +32,7 @@ const AdminCollections: React.FC = () => {
     sort_order: 0,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {
     loadCollections();
@@ -78,14 +82,24 @@ const AdminCollections: React.FC = () => {
     }
 
     try {
+      setIsSaving(true);
       const id = editingCollection ? editingCollection.id : null;
-      await adminData.upsertCollection(id, formData);
+      const saved = await adminData.upsertCollection(id, formData);
+      const message = editingCollection ? 'Coleção atualizada com sucesso!' : 'Coleção criada com sucesso!';
+      setSuccessMessage(message);
+      if (editingCollection) {
+        setCollections((prev) => prev.map((c) => (c.id === editingCollection.id ? { ...c, ...formData } as any : c)));
+      } else {
+        const newCol = { ...(saved || {}), ...formData } as any;
+        setCollections((prev) => [newCol, ...prev]);
+      }
       setShowModal(false);
       setEditingCollection(null);
       resetForm();
-      loadCollections();
     } catch (error: any) {
       setErrors({ general: error.message || 'Erro ao salvar coleção' });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -106,7 +120,8 @@ const AdminCollections: React.FC = () => {
     if (!window.confirm('Tem certeza que deseja excluir esta coleção?')) return;
     try {
       await adminData.deleteCollection(collectionId);
-      loadCollections();
+      setCollections((prev) => prev.filter((c) => c.id !== collectionId));
+      setSuccessMessage('Coleção excluída com sucesso!');
     } catch {
       alert('Erro ao excluir coleção');
     }
@@ -132,9 +147,14 @@ const AdminCollections: React.FC = () => {
 
   const handleImageUpload = async (file: File) => {
     try {
+      const user = await adminAuth.getCurrentUser();
+      if (!user) {
+        setErrors({ general: 'Faça login para enviar imagem' });
+        return;
+      }
       const bucket = import.meta.env.VITE_STORAGE_BUCKET || 'public-assets';
       const path = `collections/${formData.slug || Date.now()}/${Date.now()}-${file.name}`;
-      const { publicUrl } = await (await import('@/services/adminData')).adminData.uploadToStorage(bucket, path, file);
+      const { publicUrl } = await adminData.uploadToStorage(bucket, path, file);
       setFormData({ ...formData, image_url: publicUrl });
     } catch (e) {
       alert('Erro ao enviar imagem da coleção');
@@ -143,9 +163,12 @@ const AdminCollections: React.FC = () => {
 
   const toggleStatus = async (collection: Collection) => {
     try {
-      await adminData.upsertCollection(collection.id, { is_active: !collection.is_active });
-      loadCollections();
-    } catch {}
+      const newStatus = !collection.is_active;
+      await adminData.upsertCollection(collection.id, { is_active: newStatus });
+      setCollections((prev) => prev.map((c) => (c.id === collection.id ? { ...c, is_active: newStatus } : c)));
+    } catch {
+      alert('Erro ao atualizar coleção');
+    }
   };
 
   if (loading) {
@@ -161,6 +184,12 @@ const AdminCollections: React.FC = () => {
   return (
     <AdminLayout title="Coleções">
       <div className="space-y-6">
+        {/* Mensagem de sucesso */}
+        {successMessage && (
+          <div className="mb-4 p-4 bg-green-600 border border-green-500 rounded-lg text-white">
+            {successMessage}
+          </div>
+        )}
         {/* Header */}
         <div className="flex justify-between items-center">
           <div>
@@ -378,9 +407,10 @@ const AdminCollections: React.FC = () => {
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-900 rounded-lg font-medium transition-colors"
+                    disabled={isSaving}
+                    className="flex-1 px-4 py-2 bg-amber-500 hover:bg-amber-600 disabled:opacity-70 disabled:cursor-not-allowed text-slate-900 rounded-lg font-medium transition-colors"
                   >
-                    {editingCollection ? 'Atualizar' : 'Criar'}
+                    {isSaving ? 'Salvando...' : editingCollection ? 'Atualizar' : 'Criar'}
                   </button>
                 </div>
               </form>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Menu, Search, User, ShoppingBag, X, Heart, Home, Grid3X3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ const Header = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [cartCount, setCartCount] = useState(0);
+  const debounceRef = useRef<number | null>(null);
 
   const navLinks: Array<{ name: string; href: string }> = [];
 
@@ -19,7 +20,14 @@ const Header = () => {
       setCartCount(count);
     };
     refresh();
-    const onUpdated = () => refresh();
+    const onUpdated = () => {
+      if (debounceRef.current) {
+        window.clearTimeout(debounceRef.current);
+      }
+      debounceRef.current = window.setTimeout(() => {
+        refresh();
+      }, 200);
+    };
     window.addEventListener("cart:updated", onUpdated);
     window.addEventListener("focus", onUpdated);
     document.addEventListener("visibilitychange", onUpdated);
@@ -80,6 +88,13 @@ const Header = () => {
             >
               <Grid3X3 className="h-5 w-5" />
               <span className="text-xs font-medium">Coleções</span>
+            </Link>
+            <Link
+              to="/catalogos"
+              className="flex flex-col items-center gap-1 px-3 py-2 text-muted hover:text-primary transition-colors"
+            >
+              <Grid3X3 className="h-5 w-5" />
+              <span className="text-xs font-medium">Catálogos</span>
             </Link>
             <Link
               to="/buscar"

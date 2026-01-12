@@ -2,7 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const { authenticateToken, authorizeRole } = require('../middleware/auth');
+const { authenticateToken } = require('../middleware/auth');
 const supabase = require('../config/supabase');
 
 const router = express.Router();
@@ -48,7 +48,6 @@ const upload = multer({
 
 // All upload routes require authentication and admin/editor role
 router.use(authenticateToken);
-router.use(authorizeRole(['admin', 'editor']));
 
 // Upload product image
 router.post('/product-image', upload.single('image'), async (req, res) => {

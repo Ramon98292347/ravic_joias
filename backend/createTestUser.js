@@ -61,7 +61,7 @@ async function createTestUser() {
     console.log(`🎭 Role: ${testUser.role}`);
     console.log('');
     console.log('📝 Use essas credenciais para fazer login no painel admin.');
-    console.log('🌐 Acesse: http://localhost:8080/admin/login');
+    console.log('🌐 Acesse: http://localhost:3000/admin/login');
 
   } catch (error) {
     console.error('❌ Erro:', error);

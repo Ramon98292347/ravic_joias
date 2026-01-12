@@ -1,12 +1,12 @@
 import { Link } from "react-router-dom";
-import { Instagram, Facebook, Youtube, Phone, Mail, MapPin } from "lucide-react";
+import { Instagram, Facebook, Phone, Mail, MapPin } from "lucide-react";
 
 const Footer = () => {
   return (
     <footer className="bg-petrol-dark border-t border-border">
       {/* Main Footer */}
       <div className="container px-4 sm:px-6 py-8 xs:py-10 sm:py-12 md:py-16">
-        <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-6 xs:gap-8 sm:gap-10">
+        <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-6 xs:gap-8 sm:gap-10">
           {/* Brand */}
           <div className="lg:col-span-1">
             <Link to="/" className="inline-block mb-4 xs:mb-5 sm:mb-6">
@@ -22,7 +22,7 @@ const Footer = () => {
             </p>
             <div className="flex items-center gap-3 xs:gap-4">
               <a
-                href="https://instagram.com"
+                href="https://www.instagram.com/ravicjoias?igsh=MTV6MzNveGRjNHRyZQ%3D%3D&utm_source=qr"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="h-8 w-8 xs:h-10 xs:w-10 rounded-full border border-border flex items-center justify-center text-muted hover:text-primary hover:border-primary transition-colors"
@@ -37,51 +37,26 @@ const Footer = () => {
               >
                 <Facebook className="h-4 w-4 xs:h-5 xs:w-5" />
               </a>
-              <a
-                href="https://youtube.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="h-8 w-8 xs:h-10 xs:w-10 rounded-full border border-border flex items-center justify-center text-muted hover:text-primary hover:border-primary transition-colors"
-              >
-                <Youtube className="h-4 w-4 xs:h-5 xs:w-5" />
-              </a>
-            </div>
-          </div>
 
-          {/* Links */}
-          <div>
-            <h3 className="font-serif text-base xs:text-lg text-foreground mb-4 xs:mb-5 sm:mb-6">Navegação</h3>
-            <ul className="space-y-3">
-              {["Joias", "Relógios", "Canetas", "Alianças", "Acessórios", "Novidades"].map((item) => (
-                <li key={item}>
-                  <Link
-                    to={`/categoria/${item.toLowerCase()}`}
-                    className="text-sm text-muted hover:text-primary transition-colors"
-                  >
-                    {item}
-                  </Link>
-                </li>
-              ))}
-            </ul>
+            </div>
           </div>
 
           {/* Institutional */}
           <div>
             <h3 className="font-serif text-base xs:text-lg text-foreground mb-4 xs:mb-5 sm:mb-6">Institucional</h3>
-            <ul className="space-y-3">
-              {[
-                { name: "Sobre a Ravic", href: "/sobre" },
-                { name: "Como Comprar", href: "/como-comprar" },
-                { name: "Trocas e Devoluções", href: "/trocas" },
-                { name: "Privacidade", href: "/privacidade" },
-                { name: "Termos de Uso", href: "/termos" },
-              ].map((item) => (
-                <li key={item.name}>
-                  <Link to={item.href} className="text-sm text-muted hover:text-primary transition-colors">
-                    {item.name}
-                  </Link>
-                </li>
-              ))}
+            <ul className="space-y-2 list-disc list-inside">
+              <li>
+                <a href="/sobre" target="_blank" rel="noopener noreferrer" className="text-sm text-muted hover:text-primary transition-colors">Sobre a Ravic</a>
+              </li>
+              <li>
+                <a href="/gravacao-a-laser" target="_blank" rel="noopener noreferrer" className="text-sm text-muted hover:text-primary transition-colors">Gravação a Laser</a>
+              </li>
+              <li>
+                <a href="/garantia" target="_blank" rel="noopener noreferrer" className="text-sm text-muted hover:text-primary transition-colors">Garantia</a>
+              </li>
+              <li>
+                <a href="/trocas" target="_blank" rel="noopener noreferrer" className="text-sm text-muted hover:text-primary transition-colors">Trocas</a>
+              </li>
             </ul>
           </div>
 
@@ -114,26 +89,6 @@ const Footer = () => {
                 </p>
               </li>
             </ul>
-          </div>
-        </div>
-      </div>
-
-      {/* Bottom Bar */}
-      <div className="border-t border-border">
-        <div className="container px-4 sm:px-6 py-4 xs:py-5 sm:py-6">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-3 xs:gap-4">
-
-            <div className="flex flex-wrap items-center gap-3 xs:gap-4 sm:gap-6 text-xs text-muted justify-center md:justify-start">
-              <Link to="/privacidade" className="hover:text-primary transition-colors">
-                Como cuidamos da sua privacidade?
-              </Link>
-              <span className="hidden md:inline">|</span>
-              <Link to="/compra-garantida" className="hover:text-primary transition-colors">
-                Compra garantida
-              </Link>
-              <span className="hidden md:inline">|</span>
-              <button className="hover:text-primary transition-colors">Configurar cookies</button>
-            </div>
           </div>
         </div>
       </div>

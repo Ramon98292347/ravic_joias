@@ -96,7 +96,9 @@ const AdminCategories: React.FC = () => {
     try {
       await adminData.upsertCategory(category.id, { is_active: !category.is_active });
       loadCategories();
-    } catch {}
+    } catch {
+      alert('Erro ao atualizar categoria');
+    }
   };
 
   const generateSlug = (name: string) => {

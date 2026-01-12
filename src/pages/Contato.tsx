@@ -45,7 +45,7 @@ const Contato = () => {
                       </div>
                       <div>
                         <h3 className="font-medium text-foreground mb-1">Telefone / WhatsApp</h3>
-                        <p className="text-muted">(11) 99999-9999</p>
+                        <p className="text-muted">(27) 99734-0566</p>
                       </div>
                     </div>
 
@@ -55,7 +55,7 @@ const Contato = () => {
                       </div>
                       <div>
                         <h3 className="font-medium text-foreground mb-1">E-mail</h3>
-                        <p className="text-muted">contato@ravicjoias.com.br</p>
+                        <p className="text-muted">marketing@ravicjoias.com.br</p>
                       </div>
                     </div>
 
@@ -66,8 +66,9 @@ const Contato = () => {
                       <div>
                         <h3 className="font-medium text-foreground mb-1">Endereço</h3>
                         <p className="text-muted">
-                          Rua das Joias, 123 - Centro<br />
-                          São Paulo - SP, 01234-567
+                          Avenida Expedito Garcia, 94
+                          <br />
+                          Cariacica - Espírito Santo
                         </p>
                       </div>
                     </div>
@@ -79,8 +80,7 @@ const Contato = () => {
                       <div>
                         <h3 className="font-medium text-foreground mb-1">Horário de Funcionamento</h3>
                         <p className="text-muted">
-                          Segunda a Sexta: 9h às 19h<br />
-                          Sábado: 9h às 14h
+                          Seg a Sex: 9h às 18h
                         </p>
                       </div>
                     </div>
