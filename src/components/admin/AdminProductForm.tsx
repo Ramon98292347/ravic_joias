@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import AdminLayout from './AdminLayout';
 import { fetchCategories, fetchCollections } from '@/services/publicData';
@@ -26,6 +26,8 @@ const AdminProductForm: React.FC = () => {
   const navigate = useNavigate();
   const isEditing = !!id;
   const adminProductFormDebugEnabled = !!import.meta.env.DEV;
+  const formRef = useRef<HTMLFormElement | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const adminProductFormLog = (level: "debug" | "info" | "warn" | "error", message: string, data?: unknown) => {
     if (!adminProductFormDebugEnabled) return;
@@ -291,6 +293,22 @@ const AdminProductForm: React.FC = () => {
     }
   };
 
+  const handleDelete = async () => {
+    if (!isEditing || !id) return;
+    const ok = window.confirm('Tem certeza que deseja excluir este produto?');
+    if (!ok) return;
+    try {
+      setIsDeleting(true);
+      await adminData.deleteProduct(id);
+      navigate('/admin/products', { replace: true });
+    } catch (error) {
+      console.error('[AdminProductForm] Erro ao excluir produto:', error);
+      alert('Erro ao excluir produto. Tente novamente.');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   if (loading) {
     return (
       <AdminLayout title={isEditing ? 'Editar Produto' : 'Novo Produto'}>
@@ -304,6 +322,25 @@ const AdminProductForm: React.FC = () => {
   return (
       <AdminLayout title={isEditing ? 'Editar Produto' : 'Novo Produto'}>
         <div className="max-w-4xl mx-auto max-h-[80vh] overflow-y-auto pr-2">
+          {isEditing && (
+            <div className="flex items-center justify-end gap-2 mb-4">
+              <button
+                type="button"
+                onClick={() => formRef.current?.requestSubmit()}
+                className="px-4 py-2 rounded-lg bg-amber-400 text-slate-900 font-medium hover:bg-amber-500"
+              >
+                Editar
+              </button>
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className={`px-4 py-2 rounded-lg ${isDeleting ? 'bg-slate-600 text-slate-300' : 'bg-red-500 hover:bg-red-600 text-white'} font-medium`}
+              >
+                {isDeleting ? 'Excluindo...' : 'Excluir'}
+              </button>
+            </div>
+          )}
           {/* Mensagem de sucesso */}
           {successMessage && (
             <div className="mb-4 p-4 bg-green-600 border border-green-500 rounded-lg text-white">
@@ -353,7 +390,7 @@ const AdminProductForm: React.FC = () => {
             ) : null
           )}
         </div>
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
           {/* Basic Information */}
           <div className="bg-slate-800 rounded-lg p-6 border border-slate-700">
             <h3 className="text-lg font-semibold text-white mb-4">Informações Básicas</h3>

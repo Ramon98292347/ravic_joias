@@ -315,11 +315,8 @@ const AdminDashboard: React.FC = () => {
             </Link>
             <Link
               to="/admin/settings"
-              className="flex items-center justify-center space-x-2 bg-slate-600 hover:bg-slate-700 text-white font-medium py-3 px-4 rounded-lg transition-colors"
-            >
-              <span>⚙</span>
-              <span>Configurações</span>
-            </Link>
+              className="hidden"
+            />
           </div>
         </div>
       </div>

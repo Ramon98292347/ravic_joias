@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import AdminLayout from './AdminLayout';
 import { fetchProducts, fetchCategories, fetchCollections } from '@/services/publicData';
 import { adminData } from '@/services/adminData';
@@ -23,6 +23,7 @@ const AdminProducts: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [collectionFilter, setCollectionFilter] = useState('all');
@@ -52,6 +53,7 @@ const AdminProducts: React.FC = () => {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(50);
   const { authReady, session } = useAuth();
+  const navigate = useNavigate();
 
   const adminProductsLog = (level: "debug" | "info" | "warn" | "error", message: string, data?: unknown) => {
     if (!adminProductsDebugEnabled) return;
@@ -137,10 +139,15 @@ const AdminProducts: React.FC = () => {
   const handleDelete = async (id: string) => {
     if (!window.confirm('Tem certeza que deseja excluir este produto?')) return;
     try {
+      setIsDeleting(id);
+      setProducts((prev) => prev.filter((p) => p.id !== id));
       await adminData.deleteProduct(id);
-      loadProducts();
+      await loadProducts();
+      navigate('/admin/products', { replace: true });
     } catch (e) {
       alert('Erro ao excluir produto');
+    } finally {
+      setIsDeleting(null);
     }
   };
 
@@ -457,7 +464,7 @@ const AdminProducts: React.FC = () => {
             {products.map((product) => (
               <div
                 key={product.id}
-                onClick={() => openEditModal(product)}
+                onClick={() => navigate(`/admin/products/${product.id}`)}
                 className="bg-slate-800 rounded-lg border border-slate-700 p-3 cursor-pointer hover:border-slate-600 transition-colors"
               >
                 <div className="w-full aspect-square rounded-lg overflow-hidden border border-slate-700">
@@ -502,16 +509,17 @@ const AdminProducts: React.FC = () => {
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
                       <button
-                        onClick={(e) => { e.stopPropagation(); openEditModal(product); }}
+                        onClick={(e) => { e.stopPropagation(); navigate(`/admin/products/${product.id}`); }}
                         className="px-2 py-1 rounded-md bg-slate-700 text-amber-300 text-xs font-medium hover:bg-slate-600 transition-colors"
                       >
                         Editar
                       </button>
                       <button
-                        onClick={(e) => { e.stopPropagation(); handleDelete(product.id); }}
-                        className="px-2 py-1 rounded-md bg-slate-700 text-red-300 text-xs font-medium hover:bg-slate-600 transition-colors"
+                        onClick={(e) => { e.stopPropagation(); if (!isDeleting) handleDelete(product.id); }}
+                        className={`px-2 py-1 rounded-md ${isDeleting === product.id ? 'bg-slate-600 text-slate-400' : 'bg-slate-700 text-red-300 hover:bg-slate-600'} text-xs font-medium transition-colors`}
+                        disabled={!!isDeleting}
                       >
-                        Excluir
+                        {isDeleting === product.id ? 'Excluindo...' : 'Excluir'}
                       </button>
                     </div>
                   </div>
@@ -609,11 +617,15 @@ const AdminProducts: React.FC = () => {
                     </td>
                     <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm font-medium">
                       <div className="flex items-center space-x-1 sm:space-x-2">
-                        <button onClick={() => openEditModal(product)} className="text-amber-400 hover:text-amber-300">
+                        <button onClick={() => navigate(`/admin/products/${product.id}`)} className="text-amber-400 hover:text-amber-300">
                           ✏️
                         </button>
-                        <button onClick={() => handleDelete(product.id)} className="text-red-400 hover:text-red-300">
-                          🗑️
+                        <button
+                          onClick={() => { if (!isDeleting) handleDelete(product.id); }}
+                          className={`hover:text-red-300 ${isDeleting === product.id ? 'text-slate-500' : 'text-red-400'}`}
+                          disabled={!!isDeleting}
+                        >
+                          {isDeleting === product.id ? '⏳' : '🗑️'}
                         </button>
                       </div>
                     </td>
