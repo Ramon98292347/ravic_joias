@@ -31,6 +31,7 @@ const AdminProducts: React.FC = () => {
   const [collections, setCollections] = useState<any[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any | null>(null);
+  const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
   const [formData, setFormData] = useState<any>({
     name: '',
     description: '',
@@ -420,6 +421,20 @@ const AdminProducts: React.FC = () => {
               </select>
             </div>
           </div>
+          <div className="mt-4 flex items-center justify-end gap-2">
+            <button
+              onClick={() => setViewMode('cards')}
+              className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${viewMode === 'cards' ? 'bg-amber-500 text-slate-900' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}
+            >
+              Cards
+            </button>
+            <button
+              onClick={() => setViewMode('table')}
+              className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${viewMode === 'table' ? 'bg-amber-500 text-slate-900' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}
+            >
+              Tabela
+            </button>
+          </div>
         </div>
 
         {loading && (
@@ -437,16 +452,22 @@ const AdminProducts: React.FC = () => {
           </div>
         )}
 
-        <div className="sm:hidden space-y-3">
-          {products.map((product) => (
-            <div key={product.id} className="bg-slate-800 rounded-lg border border-slate-700 p-3">
-              <div className="flex items-start gap-3">
-                <OptimizedImage
-                  src={getPrimaryImage(product)}
-                  alt={product.name}
-                  className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
-                />
-                <div className="min-w-0 flex-1">
+        {viewMode === 'cards' && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {products.map((product) => (
+              <div
+                key={product.id}
+                onClick={() => openEditModal(product)}
+                className="bg-slate-800 rounded-lg border border-slate-700 p-3 cursor-pointer hover:border-slate-600 transition-colors"
+              >
+                <div className="w-full aspect-square rounded-lg overflow-hidden border border-slate-700">
+                  <OptimizedImage
+                    src={getPrimaryImage(product)}
+                    alt={product.name}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="mt-3">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="text-sm font-medium text-white truncate">{product.name}</div>
@@ -463,7 +484,6 @@ const AdminProducts: React.FC = () => {
                       {product.is_new && <span className="text-xs text-green-400">✨ Novo</span>}
                     </div>
                   </div>
-
                   <div className="mt-2 flex items-center justify-between gap-3">
                     <div className="min-w-0">
                       <div className="text-sm text-white">
@@ -480,16 +500,15 @@ const AdminProducts: React.FC = () => {
                         {product.stock} unidades
                       </div>
                     </div>
-
                     <div className="flex items-center gap-2 flex-shrink-0">
                       <button
-                        onClick={() => openEditModal(product)}
+                        onClick={(e) => { e.stopPropagation(); openEditModal(product); }}
                         className="px-2 py-1 rounded-md bg-slate-700 text-amber-300 text-xs font-medium hover:bg-slate-600 transition-colors"
                       >
                         Editar
                       </button>
                       <button
-                        onClick={() => handleDelete(product.id)}
+                        onClick={(e) => { e.stopPropagation(); handleDelete(product.id); }}
                         className="px-2 py-1 rounded-md bg-slate-700 text-red-300 text-xs font-medium hover:bg-slate-600 transition-colors"
                       >
                         Excluir
@@ -498,11 +517,12 @@ const AdminProducts: React.FC = () => {
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
-        <div className="hidden sm:block bg-slate-800 rounded-lg border border-slate-700 overflow-hidden">
+        {viewMode === 'table' && (
+        <div className="bg-slate-800 rounded-lg border border-slate-700 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full table-fixed">
               <thead className="bg-slate-700">
@@ -610,10 +630,11 @@ const AdminProducts: React.FC = () => {
             </div>
           )}
         </div>
+        )}
 
         {showModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-slate-800 rounded-lg max-w-2xl w-full border border-slate-700">
+            <div className="bg-slate-800 rounded-lg max-w-2xl w-full border border-slate-700 max-h-[80vh] overflow-y-auto">
               <div className="flex justify-between items-center p-6 border-b border-slate-700">
                 <h2 className="text-xl font-bold text-white">Editar Produto</h2>
                 <button onClick={closeModal} className="text-slate-400 hover:text-white transition-colors">
@@ -623,6 +644,13 @@ const AdminProducts: React.FC = () => {
                 </button>
               </div>
               <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                {currentImageInfo?.url && (
+                  <div className="mb-4">
+                    <div className="w-full aspect-square rounded-lg border border-slate-700 overflow-hidden">
+                      <img src={currentImageInfo.url} alt="Imagem atual do produto" className="w-full h-full object-cover" />
+                    </div>
+                  </div>
+                )}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-slate-300 mb-2">Nome *</label>
@@ -675,6 +703,21 @@ const AdminProducts: React.FC = () => {
                       onChange={handleInputChange}
                       className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
                     />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                  <div className="text-xs text-slate-400">
+                    <span className="font-medium text-slate-300">Coleção:</span>{' '}
+                    {(() => {
+                      const col = collections.find((c: any) => c.id === editingProduct?.collection_id);
+                      return col?.name || '-';
+                    })()}
+                  </div>
+                  <div className="text-xs text-slate-400">
+                    <span className="font-medium text-slate-300">Tags:</span>{' '}
+                    {Array.isArray(editingProduct?.tags) && editingProduct.tags.length > 0
+                      ? editingProduct.tags.join(', ')
+                      : '-'}
                   </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

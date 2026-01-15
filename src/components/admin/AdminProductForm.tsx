@@ -302,14 +302,57 @@ const AdminProductForm: React.FC = () => {
   }
 
   return (
-    <AdminLayout title={isEditing ? 'Editar Produto' : 'Novo Produto'}>
-      <div className="max-w-4xl mx-auto">
-        {/* Mensagem de sucesso */}
-        {successMessage && (
-          <div className="mb-4 p-4 bg-green-600 border border-green-500 rounded-lg text-white">
+      <AdminLayout title={isEditing ? 'Editar Produto' : 'Novo Produto'}>
+        <div className="max-w-4xl mx-auto max-h-[80vh] overflow-y-auto pr-2">
+          {/* Mensagem de sucesso */}
+          {successMessage && (
+            <div className="mb-4 p-4 bg-green-600 border border-green-500 rounded-lg text-white">
             {successMessage}
           </div>
-        )}
+          )}
+          {!isEditing && (
+            <div className="mb-4">
+              <div className="flex items-center gap-3">
+                <input
+                  id="top-image-upload"
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+                <label
+                  htmlFor="top-image-upload"
+                  className="inline-flex items-center px-4 py-2 rounded-lg bg-amber-400 text-slate-900 font-medium hover:bg-amber-500 cursor-pointer"
+                >
+                  Selecionar Fotos
+                </label>
+                {formData.images.length > 0 && (
+                  <span className="text-sm text-slate-300 truncate max-w-[60%]">
+                    {formData.images.map((f) => f.name).join(', ')}
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+          <div className="mb-4">
+            {isEditing ? (
+              (() => {
+                const primary = existingImages?.find((img: any) => img?.is_primary) || existingImages?.[0];
+                return primary?.url ? (
+                <div className="w-full aspect-square rounded-lg border border-slate-700 overflow-hidden">
+                  <img src={primary.url} alt="Imagem do produto" className="w-full h-full object-cover" />
+                </div>
+              ) : null;
+            })()
+          ) : (
+            formData.images.length > 0 ? (
+              <div className="w-full aspect-square rounded-lg border border-slate-700 overflow-hidden">
+                <img src={URL.createObjectURL(formData.images[0])} alt="Pré-visualização" className="w-full h-full object-cover" />
+              </div>
+            ) : null
+          )}
+        </div>
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Basic Information */}
           <div className="bg-slate-800 rounded-lg p-6 border border-slate-700">
@@ -516,15 +559,37 @@ const AdminProductForm: React.FC = () => {
           <div className="bg-slate-800 rounded-lg p-6 border border-slate-700">
             <h3 className="text-lg font-semibold text-white mb-4">Imagens do Produto</h3>
             {isEditing ? (
-            <ImageUpload
-              productId={id!}
-              existingImages={existingImages}
-              onUploadComplete={() => loadProduct()}
-              onImageRemove={() => loadProduct()}
-              folderPrefix={collectionSlug}
-            />
+              <ImageUpload
+                productId={id!}
+                existingImages={existingImages}
+                onUploadComplete={() => loadProduct()}
+                onImageRemove={() => loadProduct()}
+                folderPrefix={collectionSlug}
+              />
             ) : (
-              <div className="text-slate-300 text-sm">As imagens serão enviadas após criar o produto.</div>
+              <div>
+                <input id="bottom-image-upload" type="file" accept="image/*" multiple onChange={handleImageUpload} className="hidden" />
+                <label htmlFor="bottom-image-upload" className="inline-flex items-center px-4 py-2 rounded-lg bg-amber-400 text-slate-900 font-medium hover:bg-amber-500 cursor-pointer">
+                  Selecionar Fotos
+                </label>
+                {formData.images.length > 0 && (
+                  <div className="mt-4 grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {formData.images.map((file, idx) => (
+                      <div key={idx} className="relative">
+                        <img src={URL.createObjectURL(file)} alt={file.name} className="w-full h-32 object-cover rounded-md border border-slate-700" />
+                        <button
+                          type="button"
+                          onClick={() => handleImageRemove(idx)}
+                          className="absolute top-2 right-2 px-2 py-1 text-xs bg-slate-900/80 text-white rounded"
+                        >
+                          Remover
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <p className="text-xs text-slate-400 mt-2">As imagens selecionadas serão enviadas após criar o produto.</p>
+              </div>
             )}
           </div>
 

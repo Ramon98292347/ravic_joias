@@ -56,7 +56,14 @@ export const adminData = {
       adminDataLog("info", "upsertProduct:update:ok", { id });
       return id;
     }
-    const insertRow = { ...sanitized, created_at: new Date().toISOString() };
+    const baseName = String(payload?.name || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+    const slug = `${baseName}-${Date.now()}`;
+    const insertRow = { ...sanitized, slug, created_at: new Date().toISOString() };
     const { data, error } = await supabase.from("products").insert(insertRow).select("id").single();
     if (error) {
       adminDataLog("error", "upsertProduct:insert:error", { message: error.message });
