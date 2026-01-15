@@ -52,13 +52,21 @@ const fetchWithTimeout: typeof fetch = async (input, init) => {
     return res;
   } catch (error: any) {
     if (debugEnabled) {
-      console.error("[supabase:fetch] erro", {
-        method,
-        url: safeUrl,
-        ms: Date.now() - startedAt,
-        name: error?.name,
-        message: error?.message,
-      });
+      if (error?.name === "AbortError") {
+        console.debug("[supabase:fetch] aborted", {
+          method,
+          url: safeUrl,
+          ms: Date.now() - startedAt,
+        });
+      } else {
+        console.error("[supabase:fetch] erro", {
+          method,
+          url: safeUrl,
+          ms: Date.now() - startedAt,
+          name: error?.name,
+          message: error?.message,
+        });
+      }
     }
     throw error;
   } finally {

@@ -464,7 +464,7 @@ const AdminProducts: React.FC = () => {
             {products.map((product) => (
               <div
                 key={product.id}
-                onClick={() => navigate(`/admin/products/${product.id}`)}
+                onClick={() => navigate(`/admin/products/${product.id}/edit`)}
                 className="bg-slate-800 rounded-lg border border-slate-700 p-3 cursor-pointer hover:border-slate-600 transition-colors"
               >
                 <div className="w-full aspect-square rounded-lg overflow-hidden border border-slate-700">
@@ -509,7 +509,7 @@ const AdminProducts: React.FC = () => {
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
                       <button
-                        onClick={(e) => { e.stopPropagation(); navigate(`/admin/products/${product.id}`); }}
+                        onClick={(e) => { e.stopPropagation(); navigate(`/admin/products/${product.id}/edit`); }}
                         className="px-2 py-1 rounded-md bg-slate-700 text-amber-300 text-xs font-medium hover:bg-slate-600 transition-colors"
                       >
                         Editar
@@ -617,7 +617,7 @@ const AdminProducts: React.FC = () => {
                     </td>
                     <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm font-medium">
                       <div className="flex items-center space-x-1 sm:space-x-2">
-                        <button onClick={() => navigate(`/admin/products/${product.id}`)} className="text-amber-400 hover:text-amber-300">
+                        <button onClick={() => navigate(`/admin/products/${product.id}/edit`)} className="text-amber-400 hover:text-amber-300">
                           ✏️
                         </button>
                         <button

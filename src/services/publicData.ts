@@ -163,6 +163,11 @@ export const fetchProducts = async (params: {
     publicDataLog("debug", "fetchProducts:ok", { opId, total: result.total, count: result.products.length });
     return result;
   } catch (error: any) {
+    if (error?.name === "AbortError") {
+      const cachedResult = __get(ck) as { products: Product[]; total: number } | null;
+      publicDataLog("debug", "fetchProducts:aborted", { opId });
+      return cachedResult || { products: [], total: 0 };
+    }
     publicDataLog("error", "fetchProducts:exception", { opId, name: error?.name, message: error?.message });
     return { products: [], total: 0 };
   } finally {
